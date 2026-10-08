@@ -151,6 +151,8 @@
   .quick-bar:focus-within .quick-preview, .quick-bar.has-text .quick-preview { display: flex; }
   .quick-preview .meta { margin-left: auto; }
   .quick-row { position: relative; }
+  .theme-add { display: flex; gap: 6px; margin: 6px 0 4px; }
+  .theme-add input { flex: 1; min-width: 0; }
   .quick-suggest { position: absolute; left: 18px; top: calc(100% + 6px); z-index: 30; min-width: 240px; max-width: 360px; background: var(--card); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow-lg); padding: 4px; }
   .quick-suggest[hidden] { display: none; }
   .quick-suggest .qs-title { font-size: 11.5px; color: var(--ink-faint); padding: 4px 8px 2px; }
@@ -999,6 +1001,11 @@
         <label><input type="radio" name="agendaAlarm" value="veille"> La veille à 9 h</label>
         <label><input type="radio" name="agendaAlarm" value="matin"> Le jour même à 8 h 30</label>
       </div>
+      <div class="section-label">Mes thématiques</div>
+      <p class="meta">Proposées dans les listes et après # dans la saisie rapide. Renommer une thématique met à jour les tâches et notes concernées.</p>
+      <div id="myThemes"></div>
+      <div class="theme-add"><input type="text" id="newTheme" maxlength="80" placeholder="Nouvelle thématique…" aria-label="Nouvelle thématique">
+        <button class="btn-ghost" data-action="addTheme">Ajouter</button></div>
       <div class="section-label">Mes modèles de notes</div>
       <div id="myTemplates"></div>
       <div class="section-label">Vérification</div>
@@ -1080,6 +1087,8 @@ const RECUR_MONTHS = { mensuelle: 1, trimestrielle: 3, annuelle: 12 };
 const URGENCY_LABEL = { retard: 'En retard', bientot: 'Échéance proche', avenir: 'À venir', attente: 'En attente', termine: 'Terminée' };
 const URGENCY_COLOR = { retard: 'var(--brick)', bientot: 'var(--ochre)', avenir: 'var(--navy)', attente: 'var(--plum)', termine: 'var(--sage)' };
 const THEME_SUGGESTIONS = ['Paie', 'Statutaire', 'Recrutement', 'Dialogue social', 'Retraite / CNRACL', 'Discipline', 'Budget', 'Autre'];
+function themeId(nom) { return 'th-' + norm(nom).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
+function defaultThemes() { return THEME_SUGGESTIONS.map(nom => ({ id: themeId(nom), nom })); }
 const WEEKDAYS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
 const NOTE_TEMPLATES = {
   reunion: { label: 'Compte rendu de réunion', titre: 'CR réunion : ', thematique: '',
@@ -1096,7 +1105,7 @@ const NOTE_TEMPLATES = {
 function emptyState() {
   return {
     version: 5, tasks: [], notes: [], inbox: [], trash: [], dossiers: [],
-    views: [], noteTemplates: [], blocks: [], sessions: [],
+    views: [], noteTemplates: [], blocks: [], sessions: [], themes: defaultThemes(),
     settings: { agendaTitle: 'neutre', agendaAlarm: 'veille', theme: 'auto', targets: {}, loadThreshold: 5,
       listMode: 'liste', dayCapacity: 6, notify: false, notifyHour: 9, dayStart: 8, dayEnd: 18, density: 'confort', fontScale: 100 },
     meta: { lastReview: '', lastExport: '', seenVersion: '', notifiedDay: '', notifiedIds: [], tombstones: {}, tourDone: false, timer: null }
@@ -1155,6 +1164,15 @@ function normalizeState(raw) {
   if (!st.settings.targets || typeof st.settings.targets !== 'object') st.settings.targets = {};
   st.views = Array.isArray(raw.views) ? raw.views : [];
   st.noteTemplates = Array.isArray(raw.noteTemplates) ? raw.noteTemplates : [];
+  if (Array.isArray(raw.themes)) st.themes = raw.themes.filter(x => x && x.id && String(x.nom || '').trim());
+  else {
+    /* Première ouverture de cette version : liste par défaut complétée par les thématiques déjà utilisées */
+    const seen = new Set(), list = [];
+    [...THEME_SUGGESTIONS, ...st.tasks.map(t => t.thematique), ...st.notes.map(n => n.thematique)].forEach(nom => {
+      nom = String(nom || '').trim(); if (nom && !seen.has(norm(nom))) { seen.add(norm(nom)); list.push({ id: themeId(nom), nom }); }
+    });
+    st.themes = list;
+  }
   st.blocks = Array.isArray(raw.blocks) ? raw.blocks.filter(b => b && b.taskId && b.date && b.start) : [];
   st.sessions = Array.isArray(raw.sessions) ? raw.sessions.filter(x => x && x.taskId && x.date) : [];
   st.meta = { ...st.meta, ...(raw.meta || {}) };
@@ -1502,7 +1520,7 @@ function parseQuick(raw) {
   });
   text = text.replace(/\s#([^\s@#!+]+)/, (m, tok) => {
     const t = tok.replace(/_/g, ' '), nt = norm(t);
-    const themes = [...new Set([...THEME_SUGGESTIONS, ...S.tasks.map(x => x.thematique)])];
+    const themes = themeList();
     out.thematique = themes.find(x => norm(x) === nt) || themes.find(x => norm(x).startsWith(nt)) || t;
     return ' ';
   });
@@ -1682,6 +1700,8 @@ function sanitizeImport(imported) {
       id: cleanId(v.id, fx), nom: cleanStr(v.nom, 80), taskTab: ['actifs', 'retard', 'bientot', 'attente', 'relance', 'termine'].includes(v.taskTab) ? v.taskTab : 'actifs',
       theme: cleanStr(v.theme || 'Toutes', 100), dossierFilter: v.dossierFilter === 'none' ? 'none' : refId(v.dossierFilter), search: cleanStr(v.search, 200),
       sortBy: ['echeance', 'priorite', 'referent', 'titre'].includes(v.sortBy) ? v.sortBy : 'echeance', updatedAt: cleanIso(v.updatedAt) })) : null,
+    themes: imported && Array.isArray(imported.themes) ? imported.themes.slice(0, 200).filter(x => x && typeof x === 'object' && String(x.nom || '').trim()).map(x => ({
+      id: cleanId(x.id, fx), nom: cleanStr(x.nom, 80).trim(), updatedAt: cleanIso(x.updatedAt) })) : null,
     noteTemplates: imported && Array.isArray(imported.noteTemplates) ? imported.noteTemplates.slice(0, 50).filter(x => x && typeof x === 'object' && x.label).map(x => ({
       id: cleanId(x.id, fx), label: cleanStr(x.label, 80), titre: cleanStr(x.titre, 200), thematique: cleanStr(x.thematique, 100), contenu: cleanStr(x.contenu, 20000),
       updatedAt: cleanIso(x.updatedAt) })) : null,
@@ -2066,7 +2086,7 @@ function notificationsDue() {
    ===================================================================== */
 
 /* ---------- Horodatage des modifications et suppressions (synchronisation) ---------- */
-const SYNC_COLLECTIONS = ['tasks', 'notes', 'dossiers', 'inbox', 'views', 'noteTemplates', 'blocks', 'sessions'];
+const SYNC_COLLECTIONS = ['tasks', 'notes', 'dossiers', 'inbox', 'views', 'noteTemplates', 'blocks', 'sessions', 'themes'];
 const TOMBSTONE_DAYS = 120;
 let stampPrev = null;
 
@@ -2573,6 +2593,7 @@ function renderInbox() {
       <button class="icon-btn" data-action="deleteInbox" data-id="${esc(it.id)}" aria-label="Supprimer l'élément">✕</button></div>`).join('') : '');
 }
 
+function themeList() { return S.themes.map(t => t.nom); }
 function allReferents() {
   const raw = [...S.tasks.map(t => t.referent), ...S.inbox.map(i => i.referent), ...S.dossiers.map(d => d.responsable)];
   const seen = new Map();
@@ -2580,12 +2601,12 @@ function allReferents() {
   return [...seen.values()].sort((a, b) => a.localeCompare(b, 'fr'));
 }
 function renderDatalists() {
-  const key = Store.rev + '|' + S.tasks.length + '|' + S.inbox.length + '|' + S.dossiers.length;
+  const key = Store.rev + '|' + S.tasks.length + '|' + S.inbox.length + '|' + S.dossiers.length + '|' + S.themes.map(t => t.nom).join('/');
   if (renderDatalists.key === key && renderDatalists.S === S) return;
   renderDatalists.key = key; renderDatalists.S = S;
   $('referents-list').innerHTML = allReferents()
     .map(r => `<option value="${esc(r)}"></option>`).join('');
-  $('themes-list').innerHTML = [...new Set([...THEME_SUGGESTIONS, ...S.tasks.map(t => t.thematique)])]
+  $('themes-list').innerHTML = themeList()
     .map(r => `<option value="${esc(r)}"></option>`).join('');
 }
 
@@ -3005,6 +3026,12 @@ function renderFooter() {
   if (document.activeElement !== $('dayEnd')) $('dayEnd').value = S.settings.dayEnd;
   $('notifyState').textContent = notifyStateText();
   $('appVersion').textContent = APP_VERSION;
+  const usage = {};
+  [...S.tasks, ...S.notes].forEach(x => { const k = norm(String(x.thematique || '').trim()); if (k) usage[k] = (usage[k] || 0) + 1; });
+  $('myThemes').innerHTML = S.themes.length ? S.themes.map(t => `<div class="rec-row"><span class="txt">${esc(t.nom)} <span class="meta">${usage[norm(t.nom)] ? '· ' + usage[norm(t.nom)] + ' élément(s)' : ''}</span></span>
+      <button class="icon-btn" data-action="renameTheme" data-id="${esc(t.id)}" aria-label="Renommer ${esc(t.nom)}" title="Renommer">✎</button>
+      <button class="icon-btn" data-action="deleteTheme" data-id="${esc(t.id)}" aria-label="Retirer ${esc(t.nom)} de la liste" title="Retirer de la liste">✕</button></div>`).join('')
+    : '<p class="meta">Aucune thématique. Ajoute la première ci-dessous.</p>';
   $('myTemplates').innerHTML = S.noteTemplates.length ? S.noteTemplates.map(t => `<div class="rec-row"><span class="txt">${esc(t.label)}</span>
       <button class="icon-btn" data-action="deleteTemplate" data-id="${esc(t.id)}" aria-label="Supprimer le modèle ${esc(t.label)}">✕</button></div>`).join('')
     : '<p class="meta">Aucun modèle personnel. Dans une note, « Enregistrer comme modèle » en crée un.</p>';
@@ -3705,6 +3732,7 @@ async function importText(text) {
   if (out.settings) S.settings = { ...S.settings, ...out.settings, notify: S.settings.notify };
   if (out.views) S.views = out.views;
   if (out.noteTemplates) S.noteTemplates = out.noteTemplates;
+  if (out.themes) S.themes = out.themes;
   if (out.blocks) S.blocks = out.blocks;
   if (out.sessions) S.sessions = out.sessions;
   if (out.tombstones) S.meta.tombstones = out.tombstones;
@@ -4381,7 +4409,7 @@ function applyRemoteText(text) {
   try { raw = JSON.parse(text); out = parseBackup(text); } catch (e) { return { error: true }; }
   const remote = {
     tasks: out.tasks, notes: out.notes || [], dossiers: out.dossiers || [], inbox: out.inbox || [], views: out.views || [],
-    noteTemplates: out.noteTemplates || [], blocks: out.blocks || [], sessions: out.sessions || [],
+    noteTemplates: out.noteTemplates || [], blocks: out.blocks || [], sessions: out.sessions || [], themes: out.themes || [],
     meta: { tombstones: out.tombstones || {}, lastReview: out.lastReview || '' }, settings: out.settings || null
   };
   if (Store.mode !== 'memory') stampChanges();
@@ -4775,6 +4803,30 @@ const Actions = {
   },
   paletteFromQuick: () => { const q = $('quickInput').value; openModal('palette'); $('paletteInput').value = q; renderPalette(); },
   saveTemplate: () => saveTemplateFromForm(),
+  addTheme: () => {
+    const inp = $('newTheme'), nom = inp.value.trim().slice(0, 80);
+    if (!nom) { inp.focus(); return; }
+    if (S.themes.some(t => norm(t.nom) === norm(nom))) { showToast('« ' + nom + ' » existe déjà.', null, 3000); return; }
+    S.themes.push({ id: uid(), nom }); inp.value = '';
+    commit('thématique ajoutée');
+  },
+  renameTheme: d => {
+    const t = S.themes.find(x => x.id === d.id); if (!t) return;
+    const nom = (prompt('Nouveau nom de la thématique :', t.nom) || '').trim().slice(0, 80);
+    if (!nom || nom === t.nom) return;
+    if (S.themes.some(x => x.id !== t.id && norm(x.nom) === norm(nom))) { showToast('« ' + nom + ' » existe déjà.', null, 3000); return; }
+    const old = norm(t.nom); let n = 0;
+    [...S.tasks, ...S.notes, ...S.noteTemplates].forEach(x => { if (x.thematique && norm(x.thematique.trim()) === old) { x.thematique = nom; n++; } });
+    S.views.forEach(v => { if (v.theme && norm(v.theme) === old) v.theme = nom; });
+    t.nom = nom;
+    if (commit('thématique renommée')) showToast('Thématique renommée' + (n ? ', ' + n + ' élément(s) mis à jour.' : '.'), null, 3500);
+  },
+  deleteTheme: d => {
+    const t = S.themes.find(x => x.id === d.id); if (!t) return;
+    if (!confirm('Retirer « ' + t.nom + ' » de la liste ? Les tâches et notes qui l’utilisent la conservent.')) return;
+    S.themes = S.themes.filter(x => x.id !== d.id);
+    commit('thématique retirée');
+  },
   deleteTemplate: d => {
     const t = S.noteTemplates.find(x => x.id === d.id);
     if (!t || !confirm('Supprimer le modèle « ' + t.label + ' » ?')) return;
@@ -5084,14 +5136,15 @@ function hideQuickSuggest() { $('quickSuggest').hidden = true; QS.list = []; }
 function updateQuickSuggest() {
   const inp = $('quickInput'), box = $('quickSuggest');
   const pos = inp.selectionStart == null ? inp.value.length : inp.selectionStart;
-  const m = inp.value.slice(0, pos).match(/(^|\s)@([^\s@#!+]*)$/);
+  const m = inp.value.slice(0, pos).match(/(^|\s)([@#])([^\s@#!+]*)$/);
   if (!m) return hideQuickSuggest();
-  const q = norm(m[2].replace(/_/g, ' '));
-  const list = allReferents().filter(r => !q || norm(r).startsWith(q) || norm(r).split(/\s+/).some(w => w.startsWith(q))).slice(0, 8);
+  const isTheme = m[2] === '#', tok = m[3];
+  const q = norm(tok.replace(/_/g, ' '));
+  const list = (isTheme ? themeList() : allReferents()).filter(r => !q || norm(r).startsWith(q) || norm(r).split(/\s+/).some(w => w.startsWith(q))).slice(0, 8);
   if (!list.length) return hideQuickSuggest();
   const tail = inp.value.slice(pos).match(/^[^\s@#!+]*/)[0];
-  Object.assign(QS, { list, idx: Math.min(QS.idx, list.length - 1), start: pos - m[2].length, end: pos + tail.length });
-  box.innerHTML = '<div class="qs-title">Référents déjà utilisés</div>' +
+  Object.assign(QS, { list, idx: Math.min(QS.idx, list.length - 1), start: pos - tok.length, end: pos + tail.length });
+  box.innerHTML = '<div class="qs-title">' + (isTheme ? 'Mes thématiques' : 'Référents déjà utilisés') + '</div>' +
     list.map((r, i) => `<button type="button" role="option" class="${i === QS.idx ? 'on' : ''}" data-i="${i}">${esc(r)}</button>`).join('') +
     '<div class="qs-hint">↑ ↓ choisir · Entrée ou Tab valider · Échap fermer</div>';
   box.hidden = false;
@@ -5110,6 +5163,7 @@ function pickQuickSuggest(i) {
 }
 $('quickInput').addEventListener('input', () => { QS.idx = 0; updateQuickSuggest(); });
 $('quickInput').addEventListener('click', updateQuickSuggest);
+$('newTheme').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); Actions.addTheme({}); } });
 $('quickInput').addEventListener('blur', () => setTimeout(hideQuickSuggest, 150));
 $('quickSuggest').addEventListener('mousedown', e => e.preventDefault());
 $('quickSuggest').addEventListener('click', e => { const b = e.target.closest('button[data-i]'); if (b) pickQuickSuggest(+b.dataset.i); });
