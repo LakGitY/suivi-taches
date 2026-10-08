@@ -394,6 +394,32 @@
   .review-nav { display: flex; justify-content: space-between; margin-top: 24px; gap: 10px; flex-wrap: wrap; }
 
   /* ===== Dossiers ===== */
+  .d-rows, .n-rows { display: flex; flex-direction: column; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+  .d-row, .n-row { display: grid; align-items: center; gap: 12px; padding: 10px 14px; border: none; border-bottom: 1px solid var(--line); background: none; text-align: left; width: 100%; font: inherit; font-size: 14px; color: var(--ink); }
+  .d-row:last-child, .n-row:last-child { border-bottom: none; }
+  .d-row { grid-template-columns: minmax(0, 2.4fr) minmax(0, 1.3fr) 150px 110px 110px; cursor: pointer; }
+  .d-row:hover, .n-row:hover { background: color-mix(in srgb, var(--navy) 5%, transparent); }
+  .d-row.head, .n-row.head { font-size: 11.5px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: .04em; cursor: default; padding-top: 8px; padding-bottom: 8px; }
+  .d-row.head:hover, .n-row.head:hover { background: none; }
+  .d-row.clos { color: var(--ink-soft); }
+  .d-row .nm, .n-row .nm { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .d-row .sub, .n-row .sub { color: var(--ink-soft); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .d-row .pg { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .d-row .pg .progress { flex: 1; margin: 0; }
+  .d-row .late { color: var(--brick); font-weight: 600; }
+  .n-row { grid-template-columns: minmax(0, 2.6fr) minmax(0, 1fr) minmax(0, 1.3fr) 110px 190px; }
+  .n-row .nm { background: none; border: none; padding: 0; text-align: left; font: inherit; font-weight: 600; color: var(--ink); cursor: pointer; }
+  .n-row .nm:hover { text-decoration: underline; }
+  .n-row .acts { display: flex; gap: 10px; justify-content: flex-end; }
+  @media (max-width: 760px) {
+    .d-row { grid-template-columns: minmax(0, 1fr) 110px; }
+    .d-row > :nth-child(2), .d-row > :nth-child(4) { display: none; }
+    .d-row > :nth-child(5) { grid-column: 2; }
+    .d-row > :nth-child(3) { grid-column: 1 / -1; }
+    .n-row { grid-template-columns: minmax(0, 1fr) auto; }
+    .n-row > :nth-child(2), .n-row > :nth-child(3) { display: none; }
+    .n-row .acts { grid-column: 1 / -1; justify-content: flex-start; }
+  }
   .dossier-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
   .dossier-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; text-align: left; width: 100%; color: var(--ink); display: block; box-shadow: var(--shadow); transition: border-color .15s; }
   .dossier-card:hover { border-color: var(--plum); }
@@ -766,6 +792,30 @@
     </section>
 
     <section id="view-dossiers" hidden>
+      <div id="dossierListTools">
+      <div class="toolbar">
+        <div class="search-box">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <label class="sr-only" for="dossierSearchInput">Filtrer les dossiers</label>
+          <input type="search" id="dossierSearchInput" placeholder="Filtrer les dossiers (nom, description, responsable…)">
+        </div>
+        <button class="btn-ghost" id="dFiltersBtn" data-action="toggleDFilters" aria-expanded="false">Filtres</button>
+        <div class="seg compact" role="group" aria-label="Affichage des dossiers">
+          <button data-action="setDLayout" data-mode="liste" id="dLayoutList" aria-pressed="false" title="Liste compacte">Liste</button>
+          <button data-action="setDLayout" data-mode="cartes" id="dLayoutCards" aria-pressed="true" title="Cartes">Cartes</button>
+        </div>
+        <button class="btn-primary" data-action="newDossier">+ Dossier</button>
+      </div>
+      <div class="filters" id="dFiltersPanel" hidden>
+        <div class="pills" id="dStatusPills" role="group" aria-label="Statut"></div>
+        <div class="row">
+          <label>Responsable <select id="dRespFilter"></select></label>
+          <label>Situation <select id="dStateFilter"><option value="">Toutes</option><option value="retard">Avec des tâches en retard</option><option value="depasse">Échéance du dossier dépassée</option><option value="attente">Avec des tâches en attente</option><option value="vide">Sans tâche</option></select></label>
+          <label>Trier par <select id="dSort"><option value="echeance">Échéance</option><option value="nom">Nom</option><option value="avancement">Avancement</option><option value="retard">Tâches en retard</option></select></label>
+        </div>
+        <div class="row"><button class="link-btn" data-action="resetDFilters">Réinitialiser les filtres</button></div>
+      </div>
+      </div>
       <div id="dossiersContainer"></div>
     </section>
 
@@ -776,9 +826,22 @@
           <label class="sr-only" for="noteSearchInput">Rechercher dans les notes</label>
           <input type="search" id="noteSearchInput" placeholder="Rechercher dans les notes…">
         </div>
+        <button class="btn-ghost" id="nFiltersBtn" data-action="toggleNFilters" aria-expanded="false">Filtres</button>
+        <div class="seg compact" role="group" aria-label="Affichage des notes">
+          <button data-action="setNLayout" data-mode="liste" id="nLayoutList" aria-pressed="false" title="Liste compacte">Liste</button>
+          <button data-action="setNLayout" data-mode="cartes" id="nLayoutCards" aria-pressed="true" title="Cartes">Cartes</button>
+        </div>
         <button class="btn-primary" data-action="newNote">+ Note</button>
       </div>
-      <div class="pills" id="noteThemePills" role="group" aria-label="Thématique" style="margin-bottom:14px"></div>
+      <div class="filters" id="nFiltersPanel" hidden>
+        <div class="pills" id="noteThemePills" role="group" aria-label="Thématique"></div>
+        <div class="row">
+          <label>Dossier <select id="nDossierFilter"></select></label>
+          <label>Modifiée <select id="nPeriod"><option value="">Depuis toujours</option><option value="7">Ces 7 derniers jours</option><option value="30">Ces 30 derniers jours</option><option value="90">Ces 90 derniers jours</option></select></label>
+          <label>Trier par <select id="nSort"><option value="modif">Dernière modification</option><option value="creation">Date de création</option><option value="titre">Titre</option></select></label>
+        </div>
+        <div class="row"><button class="link-btn" data-action="resetNFilters">Réinitialiser les filtres</button></div>
+      </div>
       <div id="noteListContainer"></div>
     </section>
 
@@ -1107,7 +1170,7 @@ function emptyState() {
     version: 5, tasks: [], notes: [], inbox: [], trash: [], dossiers: [],
     views: [], noteTemplates: [], blocks: [], sessions: [], themes: defaultThemes(),
     settings: { agendaTitle: 'neutre', agendaAlarm: 'veille', theme: 'auto', targets: {}, loadThreshold: 5,
-      listMode: 'liste', dayCapacity: 6, notify: false, notifyHour: 9, dayStart: 8, dayEnd: 18, density: 'confort', fontScale: 100 },
+      listMode: 'liste', dayCapacity: 6, notify: false, notifyHour: 9, dayStart: 8, dayEnd: 18, density: 'confort', fontScale: 100, dossierMode: 'cartes', noteMode: 'cartes' },
     meta: { lastReview: '', lastExport: '', seenVersion: '', notifiedDay: '', notifiedIds: [], tombstones: {}, tourDone: false, timer: null }
   };
 }
@@ -1118,6 +1181,8 @@ const UI = {
   expandedId: null, taskLimit: PAGE_TASKS, showArchived: false, filtersOpen: false,
   noteSearch: '', noteTheme: 'Toutes', noteLimit: PAGE_NOTES, openNotes: new Set(),
   dossierId: null, showClosedDossiers: false, showDoneInDossier: false,
+  dSearch: '', dFiltersOpen: false, dStatus: 'actifs', dResp: '', dState: '', dSort: 'echeance',
+  nFiltersOpen: false, noteDossier: '', notePeriod: '', noteSort: 'modif',
   pilotDays: 90, reviewStep: 0, inboxOpen: true, recoveryOpen: false, settingsOpen: false,
   pendingNoteLink: null, pendingInboxId: null, readOnly: false, error: '', loaded: false,
   undo: [], redo: [], lastState: '', selected: new Set(), selectMode: false, cursorId: null, modal: null,
@@ -1683,6 +1748,8 @@ function sanitizeImport(imported) {
       theme: ['auto', 'light', 'dark'].includes(imported.settings.theme) ? imported.settings.theme : 'auto',
       loadThreshold: Number.isInteger(imported.settings.loadThreshold) && imported.settings.loadThreshold > 0 ? imported.settings.loadThreshold : 5,
       listMode: imported.settings.listMode === 'cartes' ? 'cartes' : 'liste',
+      dossierMode: imported.settings.dossierMode === 'liste' ? 'liste' : 'cartes',
+      noteMode: imported.settings.noteMode === 'liste' ? 'liste' : 'cartes',
       dayCapacity: Number(imported.settings.dayCapacity) > 0 && Number(imported.settings.dayCapacity) <= 24 ? Number(imported.settings.dayCapacity) : 6,
       notify: false, notifyHour: Number.isInteger(imported.settings.notifyHour) && imported.settings.notifyHour >= 0 && imported.settings.notifyHour < 24 ? imported.settings.notifyHour : 9,
       dayStart: Number.isInteger(imported.settings.dayStart) && imported.settings.dayStart >= 0 && imported.settings.dayStart < 23 ? imported.settings.dayStart : 8,
@@ -2889,39 +2956,113 @@ function dossierDetailHTML(d) {
       <button class="link-btn" data-action="toggleDoneInDossier">${UI.showDoneInDossier ? 'Masquer' : 'Afficher'} les tâches terminées</button></div>` : ''}`;
 }
 
+function filterBtnLabel(n) { return 'Filtres' + (n ? ' (' + n + ')' : ''); }
+function dossierRowHTML(d) {
+  const st = dossierStats(d);
+  return `<button class="d-row${d.statut === 'clos' ? ' clos' : ''}" data-action="openDossier" data-id="${esc(d.id)}">
+    <span class="nm" title="${esc(d.nom)}">${esc(d.nom)}${d.statut === 'clos' ? ' · clos' : ''}</span>
+    <span class="sub">${d.responsable ? esc(d.responsable) : '-'}</span>
+    <span class="pg"><span class="progress" aria-hidden="true"><div style="width:${st.pct}%"></div></span>${st.done}/${st.total}</span>
+    <span class="sub${st.retard ? ' late' : ''}">${st.retard ? st.retard + ' en retard' : st.attente ? st.attente + ' en attente' : 'À jour'}</span>
+    <span class="sub"${st.late ? ' style="color:var(--brick);font-weight:600"' : ''}>${d.echeance ? formatDate(d.echeance) : '-'}</span>
+  </button>`;
+}
+function getFilteredDossiers() {
+  const q = norm(UI.dSearch.trim());
+  const list = S.dossiers.filter(d => UI.dStatus === 'tous' || (UI.dStatus === 'clos') === (d.statut === 'clos'))
+    .filter(d => !UI.dResp || (UI.dResp === 'none' ? !String(d.responsable || '').trim() : norm(String(d.responsable || '').trim()) === norm(UI.dResp)))
+    .map(d => ({ d, st: dossierStats(d) }))
+    .filter(({ st }) => !UI.dState || (UI.dState === 'retard' ? st.retard > 0 : UI.dState === 'depasse' ? st.late : UI.dState === 'attente' ? st.attente > 0 : st.total === 0))
+    .filter(({ d }) => !q || norm([d.nom, d.description, d.responsable].join(' ')).includes(q));
+  const byNom = (a, b) => a.d.nom.localeCompare(b.d.nom, 'fr');
+  const cmp = {
+    nom: byNom,
+    avancement: (a, b) => a.st.pct - b.st.pct || byNom(a, b),
+    retard: (a, b) => b.st.retard - a.st.retard || byNom(a, b),
+    echeance: (a, b) => (a.d.echeance || '9999').localeCompare(b.d.echeance || '9999') || byNom(a, b)
+  }[UI.dSort] || byNom;
+  return list.sort(cmp).map(x => x.d);
+}
 function renderDossiers() {
   const c = $('dossiersContainer');
   if (UI.dossierId) {
     const d = findDossier(UI.dossierId);
-    if (d) { c.innerHTML = dossierDetailHTML(d); return; }
+    if (d) { $('dossierListTools').hidden = true; c.innerHTML = dossierDetailHTML(d); return; }
     UI.dossierId = null;
   }
-  const actifs = S.dossiers.filter(d => d.statut !== 'clos'), clos = S.dossiers.filter(d => d.statut === 'clos');
-  const shown = UI.showClosedDossiers ? [...actifs, ...clos] : actifs;
-  c.innerHTML = `<div class="toolbar" style="justify-content:space-between;align-items:center">
-      <p class="muted" style="margin:0;flex:1 1 260px">Un dossier regroupe les tâches et les notes d’un même sujet, avec son avancement global.</p>
-      <button class="btn-primary" data-action="newDossier">+ Nouveau dossier</button></div>` +
-    (shown.length ? `<div class="dossier-grid">${shown.map(dossierCardHTML).join('')}</div>`
-      : emptyHTML('Aucun dossier', 'Crée un dossier pour un sujet long : élections professionnelles, réorganisation d’un service, contentieux…', 'folder')) +
-    (clos.length ? `<div class="more-row"><button class="link-btn" data-action="toggleClosedDossiers">${UI.showClosedDossiers ? 'Masquer' : 'Afficher'} les dossiers clos (${clos.length})</button></div>` : '');
+  $('dossierListTools').hidden = false;
+  const mode = S.settings.dossierMode === 'liste' ? 'liste' : 'cartes';
+  $('dLayoutList').setAttribute('aria-pressed', mode === 'liste');
+  $('dLayoutCards').setAttribute('aria-pressed', mode === 'cartes');
+  const nAct = S.dossiers.filter(d => d.statut !== 'clos').length, nClos = S.dossiers.length - nAct;
+  $('dStatusPills').innerHTML = [['actifs', 'En cours', nAct], ['clos', 'Clos', nClos], ['tous', 'Tous', S.dossiers.length]]
+    .map(([k, l, n]) => `<button class="pill" data-action="dStatus" data-value="${k}" aria-pressed="${UI.dStatus === k}">${l} (${n})</button>`).join('');
+  const resps = [...new Map(S.dossiers.map(d => String(d.responsable || '').trim()).filter(Boolean).map(r => [norm(r), r])).values()].sort((a, b) => a.localeCompare(b, 'fr'));
+  $('dRespFilter').innerHTML = '<option value="">Tous</option><option value="none">Sans responsable</option>' + resps.map(r => `<option value="${esc(r)}">${esc(r)}</option>`).join('');
+  $('dRespFilter').value = UI.dResp; $('dStateFilter').value = UI.dState; $('dSort').value = UI.dSort;
+  const active = (UI.dStatus !== 'actifs') + (!!UI.dResp) + (!!UI.dState) + (UI.dSort !== 'echeance');
+  $('dFiltersBtn').textContent = filterBtnLabel(active);
+  $('dFiltersBtn').setAttribute('aria-expanded', UI.dFiltersOpen);
+  $('dFiltersPanel').hidden = !UI.dFiltersOpen;
+  if (!S.dossiers.length) { c.innerHTML = emptyHTML('Aucun dossier', 'Un dossier regroupe les tâches et les notes d’un même sujet long : élections professionnelles, réorganisation d’un service, contentieux…', 'folder'); return; }
+  const list = getFilteredDossiers();
+  if (!list.length) {
+    c.innerHTML = emptyHTML('Aucun dossier', 'Aucun dossier ne correspond à cette recherche ou à ces filtres.', 'search') +
+      (UI.dStatus === 'actifs' && nClos ? `<div class="more-row"><button class="link-btn" data-action="dStatus" data-value="tous">Chercher aussi dans les dossiers clos (${nClos})</button></div>` : '');
+    return;
+  }
+  c.innerHTML = mode === 'liste'
+    ? `<div class="d-rows"><div class="d-row head" aria-hidden="true"><span>Dossier</span><span>Responsable</span><span>Avancement</span><span>Situation</span><span>Échéance</span></div>${list.map(dossierRowHTML).join('')}</div>`
+    : `<div class="dossier-grid">${list.map(dossierCardHTML).join('')}</div>`;
 }
 
 /* ---------- Notes ---------- */
 function renderNotes() {
-  const themes = ['Toutes', ...new Set(S.notes.map(n => n.thematique))];
-  $('noteThemePills').innerHTML = themes.length > 1 ? themes.map(t => `<button class="pill" data-action="noteTheme" data-value="${esc(t)}" aria-pressed="${t === UI.noteTheme}">${esc(t)}</button>`).join('') : '';
+  const themes = ['Toutes', ...new Set(S.notes.map(n => n.thematique).filter(Boolean))];
+  $('noteThemePills').innerHTML = themes.map(t => `<button class="pill" data-action="noteTheme" data-value="${esc(t)}" aria-pressed="${t === UI.noteTheme}">${esc(t)}</button>`).join('');
+  $('nDossierFilter').innerHTML = '<option value="">Tous</option><option value="none">Sans dossier</option>' +
+    S.dossiers.map(d => `<option value="${esc(d.id)}">${esc(d.nom)}${d.statut === 'clos' ? ' (clos)' : ''}</option>`).join('');
+  if (UI.noteDossier && UI.noteDossier !== 'none' && !findDossier(UI.noteDossier)) UI.noteDossier = '';
+  $('nDossierFilter').value = UI.noteDossier; $('nPeriod').value = UI.notePeriod; $('nSort').value = UI.noteSort;
+  const active = (UI.noteTheme !== 'Toutes') + (!!UI.noteDossier) + (!!UI.notePeriod) + (UI.noteSort !== 'modif');
+  $('nFiltersBtn').textContent = filterBtnLabel(active);
+  $('nFiltersBtn').setAttribute('aria-expanded', UI.nFiltersOpen);
+  $('nFiltersPanel').hidden = !UI.nFiltersOpen;
+  const mode = S.settings.noteMode === 'liste' ? 'liste' : 'cartes';
+  $('nLayoutList').setAttribute('aria-pressed', mode === 'liste');
+  $('nLayoutCards').setAttribute('aria-pressed', mode === 'cartes');
+  const since = UI.notePeriod ? new Date(Date.now() - Number(UI.notePeriod) * DAY).toISOString() : '';
   const q = norm(UI.noteSearch.trim());
+  const sorter = UI.noteSort === 'titre' ? (a, b) => (a.titre || '').localeCompare(b.titre || '', 'fr')
+    : UI.noteSort === 'creation' ? (a, b) => (b.dateCreation || '').localeCompare(a.dateCreation || '')
+    : (a, b) => (b.dateModif || '').localeCompare(a.dateModif || '');
   const list = S.notes
     .filter(n => UI.noteTheme === 'Toutes' || n.thematique === UI.noteTheme)
+    .filter(n => !UI.noteDossier || (UI.noteDossier === 'none' ? !n.dossierId : n.dossierId === UI.noteDossier))
+    .filter(n => !since || (n.dateModif || n.dateCreation || '') >= since)
     .filter(n => {
       if (!q) return true;
       const d = findDossier(n.dossierId), t = findTask(n.taskId);
       return norm([n.titre, n.contenu, d ? d.nom : '', t ? taskLabel(t) : ''].join(' ')).includes(q);
     })
-    .sort((a, b) => (b.dateModif || '').localeCompare(a.dateModif || ''));
+    .sort(sorter);
   const c = $('noteListContainer');
   if (!list.length) {
     c.innerHTML = emptyHTML('Aucune note', S.notes.length ? 'Aucune note ne correspond à ce filtre.' : 'Crée ta première note : compte rendu, idée, point à vérifier…', S.notes.length ? 'search' : 'note');
+    return;
+  }
+  const more = list.length > UI.noteLimit ? `<div class="more-row"><button class="btn-ghost" data-action="moreNotes">Afficher plus (${list.length - UI.noteLimit} restante(s))</button></div>` : '';
+  if (mode === 'liste') {
+    c.innerHTML = '<div class="n-rows"><div class="n-row head" aria-hidden="true"><span>Note</span><span>Thématique</span><span>Dossier</span><span>' + (UI.noteSort === 'creation' ? 'Créée le' : 'Modifiée le') + '</span><span></span></div>' +
+      list.slice(0, UI.noteLimit).map(n => {
+        const d = findDossier(n.dossierId), dt = UI.noteSort === 'creation' ? n.dateCreation : (n.dateModif || n.dateCreation);
+        return `<div class="n-row"><button class="nm" data-action="editNote" data-id="${esc(n.id)}" title="${esc(n.titre)}">${esc(n.titre || 'Sans titre')}</button>
+          <span class="sub">${esc(n.thematique || '-')}</span>
+          <span class="sub">${d ? `<button class="link-btn" data-action="openDossier" data-id="${esc(d.id)}">${esc(d.nom)}</button>` : '-'}</span>
+          <span class="sub mono">${dt ? formatDate(dt.slice(0, 10)) : '-'}</span>
+          <span class="acts"><button class="link-btn" data-action="noteToTask" data-id="${esc(n.id)}">Créer une tâche</button>
+            <button class="link-btn" data-action="deleteNote" data-id="${esc(n.id)}">Supprimer</button></span></div>`;
+      }).join('') + '</div>' + more;
     return;
   }
   c.innerHTML = '<div class="note-list">' + list.slice(0, UI.noteLimit).map(n => {
@@ -2942,8 +3083,7 @@ function renderNotes() {
         <button class="link-btn" data-action="noteToTask" data-id="${esc(n.id)}">Créer une tâche</button>
         <button class="link-btn" data-action="deleteNote" data-id="${esc(n.id)}">Supprimer</button>
       </div></article>`;
-  }).join('') + '</div>' +
-    (list.length > UI.noteLimit ? `<div class="more-row"><button class="btn-ghost" data-action="moreNotes">Afficher plus (${list.length - UI.noteLimit} restante(s))</button></div>` : '');
+  }).join('') + '</div>' + more;
 }
 
 /* ---------- Pilotage ---------- */
@@ -4756,6 +4896,13 @@ const Actions = {
     UI.dossierId = null;
     if (commit()) undoToast('Dossier supprimé (ses tâches et notes sont conservées)', e);
   },
+  toggleDFilters: () => { UI.dFiltersOpen = !UI.dFiltersOpen; render(); },
+  dStatus: d => { UI.dStatus = d.value; render(); },
+  setDLayout: d => { S.settings.dossierMode = d.mode === 'liste' ? 'liste' : 'cartes'; quietSave(); render(); },
+  resetDFilters: () => { UI.dStatus = 'actifs'; UI.dResp = ''; UI.dState = ''; UI.dSort = 'echeance'; UI.dSearch = ''; $('dossierSearchInput').value = ''; render(); },
+  toggleNFilters: () => { UI.nFiltersOpen = !UI.nFiltersOpen; render(); },
+  setNLayout: d => { S.settings.noteMode = d.mode === 'liste' ? 'liste' : 'cartes'; quietSave(); render(); },
+  resetNFilters: () => { UI.noteTheme = 'Toutes'; UI.noteDossier = ''; UI.notePeriod = ''; UI.noteSort = 'modif'; UI.noteSearch = ''; $('noteSearchInput').value = ''; UI.noteLimit = PAGE_NOTES; render(); },
   toggleClosedDossiers: () => { UI.showClosedDossiers = !UI.showClosedDossiers; render(); },
   toggleDoneInDossier: () => { UI.showDoneInDossier = !UI.showDoneInDossier; render(); },
 
@@ -5184,6 +5331,13 @@ $('searchInput').addEventListener('input', (e) => {
   if (S.tasks.length > 400) UI.searchTimer = setTimeout(render, 140); else render();
 });
 $('noteSearchInput').addEventListener('input', (e) => { UI.noteSearch = e.target.value; UI.noteLimit = PAGE_NOTES; render(); });
+$('dossierSearchInput').addEventListener('input', (e) => { UI.dSearch = e.target.value; render(); });
+$('dRespFilter').addEventListener('change', e => { UI.dResp = e.target.value; render(); });
+$('dStateFilter').addEventListener('change', e => { UI.dState = e.target.value; render(); });
+$('dSort').addEventListener('change', e => { UI.dSort = e.target.value; render(); });
+$('nDossierFilter').addEventListener('change', e => { UI.noteDossier = e.target.value; UI.noteLimit = PAGE_NOTES; render(); });
+$('nPeriod').addEventListener('change', e => { UI.notePeriod = e.target.value; UI.noteLimit = PAGE_NOTES; render(); });
+$('nSort').addEventListener('change', e => { UI.noteSort = e.target.value; render(); });
 $('sortBy').addEventListener('change', (e) => { UI.sortBy = e.target.value; render(); });
 $('dossierFilter').addEventListener('change', (e) => { UI.dossierFilter = e.target.value; UI.taskLimit = PAGE_TASKS; render(); });
 $('pilotPeriod').addEventListener('change', (e) => { UI.pilotDays = Number(e.target.value); render(); });
