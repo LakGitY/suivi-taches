@@ -2239,7 +2239,8 @@ function mergeTaskPair(win, lose) {
 /* ---------- Planning de la journée en créneaux (P47) ---------- */
 const toMin = hm => { const [h, m] = String(hm).split(':').map(Number); return h * 60 + m; };
 const toHM = m => pad(Math.floor(m / 60)) + ':' + pad(m % 60);
-function dayBlocks(iso) { return S.blocks.filter(b => b.date === iso).sort((a, b) => a.start.localeCompare(b.start)); }
+/* Un créneau dont la tâche a été supprimée est ignoré (il sera purgé au prochain chargement) */
+function dayBlocks(iso) { return S.blocks.filter(b => b.date === iso && findTask(b.taskId)).sort((a, b) => a.start.localeCompare(b.start)); }
 function dayBounds() {
   const num = (v, d) => Number.isFinite(Number(v)) && v !== '' && v !== null ? Number(v) : d;
   const a = Math.max(0, Math.min(22, num(S.settings.dayStart, 8)));
@@ -2564,7 +2565,14 @@ function render() {
   renderWelcome();
   renderInbox();
   renderDatalists();
-  ({ today: renderToday, review: renderReview, tasks: renderTasks, dossiers: renderDossiers, notes: renderNotes, pilot: renderPilot, calendar: renderCalendar })[UI.view]();
+  try {
+    ({ today: renderToday, review: renderReview, tasks: renderTasks, dossiers: renderDossiers, notes: renderNotes, pilot: renderPilot, calendar: renderCalendar })[UI.view]();
+  } catch (err) {
+    /* Une anomalie dans une vue ne doit pas bloquer la navigation */
+    console.error(err);
+    const box = $(VIEWS[UI.view][1]);
+    if (box) box.innerHTML = `<div class="hint-box">Cette vue n’a pas pu s’afficher entièrement (${esc(err && err.message || String(err))}). Recharge la page ; si le problème revient, signale-le.</div>`;
+  }
   renderSidebar();
   renderDetail();
   renderFooter();
