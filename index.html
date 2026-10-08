@@ -2542,10 +2542,13 @@ function renderNotices() {
 }
 
 function renderWelcome() {
-  const empty = !S.tasks.length && !S.notes.length && !S.inbox.length && !S.dossiers.length;
+  const st = typeof autoState === 'undefined' ? 'off' : autoState;
+  const empty = !S.tasks.length && !S.notes.length && !S.inbox.length && !S.dossiers.length
+    && !S.meta.welcomeDismissed && (st === 'off' || st === 'unsupported');
   $('welcomeBox').innerHTML = empty ? `<div class="welcome"><b>Bienvenue.</b> Aucune donnée n’est enregistrée dans ce navigateur.
     Si tu utilisais déjà l’outil (autre poste, navigateur réinitialisé), restaure ta dernière sauvegarde ; sinon, commence simplement par la saisie rapide ci-dessous.
-    <div class="footer-row"><button class="btn-primary" data-action="restoreFromFile">Restaurer depuis un fichier de sauvegarde</button></div></div>` : '';
+    <div class="footer-row"><button class="btn-primary" data-action="restoreFromFile">Restaurer depuis un fichier de sauvegarde</button>
+    <button class="btn-ghost" data-action="dismissWelcome">Ne plus afficher</button></div></div>` : '';
 }
 
 function renderInbox() {
@@ -4797,6 +4800,7 @@ const Actions = {
   openMail: () => openModal('mail'),
   pasteMail: () => pasteMail(),
   submitMail: () => submitMail(),
+  dismissWelcome: () => { S.meta.welcomeDismissed = true; Store.save(); render(); },
   dismissNews: () => { S.meta.seenVersion = APP_VERSION; UI.newsOpen = false; Store.save(); render(); },
   showNews: () => { UI.newsOpen = true; render(); scrollTop(); },
   toggleDark: () => {
