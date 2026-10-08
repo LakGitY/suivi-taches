@@ -150,6 +150,13 @@
   .quick-preview { display: none; margin: 6px 8px 2px 0; padding: 8px 0 4px; border-top: 1px solid var(--line); font-size: 12.5px; color: var(--ink-soft); flex-wrap: wrap; gap: 6px 10px; align-items: center; animation: fadeIn .15s; }
   .quick-bar:focus-within .quick-preview, .quick-bar.has-text .quick-preview { display: flex; }
   .quick-preview .meta { margin-left: auto; }
+  .quick-row { position: relative; }
+  .quick-suggest { position: absolute; left: 18px; top: calc(100% + 6px); z-index: 30; min-width: 240px; max-width: 360px; background: var(--card); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow-lg); padding: 4px; }
+  .quick-suggest[hidden] { display: none; }
+  .quick-suggest .qs-title { font-size: 11.5px; color: var(--ink-faint); padding: 4px 8px 2px; }
+  .quick-suggest button { display: block; width: 100%; text-align: left; border: none; background: transparent; padding: 7px 8px; border-radius: 6px; font: inherit; font-size: 14px; color: var(--ink); cursor: pointer; }
+  .quick-suggest button.on, .quick-suggest button:hover { background: color-mix(in srgb, var(--navy) 10%, transparent); }
+  .quick-suggest .qs-hint { font-size: 11.5px; color: var(--ink-faint); padding: 4px 8px; border-top: 1px solid var(--line); margin-top: 2px; }
   .quick-feedback { font-size: 12.5px; color: var(--sage); font-weight: 600; padding: 4px 4px 2px; }
   .quick-feedback:empty { display: none; }
   .chip { padding: 2px 9px; border-radius: 20px; background: var(--paper); color: var(--ink); font-size: 12px; }
@@ -693,6 +700,7 @@
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7.5"/><line x1="20.5" y1="20.5" x2="16.4" y2="16.4"/></svg></button>
         <button class="icon-btn quick-icon" type="button" data-action="openMail" aria-label="Créer une tâche depuis un mail" title="Depuis un mail Outlook">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><polyline points="3 7 12 13 21 7"/></svg></button>
+        <div class="quick-suggest" id="quickSuggest" role="listbox" hidden></div>
       </div>
       <div class="quick-preview" id="quickPreview"></div>
       <div class="quick-feedback" id="quickFeedback" aria-live="polite"></div>
@@ -1484,7 +1492,7 @@ function dossierStats(d) {
 function parseQuick(raw) {
   let text = ' ' + raw + ' ';
   const out = { referent: '', thematique: '', priorite: 'normale', echeance: '', tache: '', dossierId: '', dossierUnknown: '', estimation: 0 };
-  const refs = [...new Set(S.tasks.map(x => x.referent.trim()))];
+  const refs = allReferents();
   text = text.replace(/\s@([^\s@#!+]+)/, (m, tok) => {
     const t = tok.replace(/_/g, ' '), nt = norm(t);
     const exact = refs.find(k => norm(k) === nt);
@@ -2565,11 +2573,17 @@ function renderInbox() {
       <button class="icon-btn" data-action="deleteInbox" data-id="${esc(it.id)}" aria-label="Supprimer l'élément">✕</button></div>`).join('') : '');
 }
 
+function allReferents() {
+  const raw = [...S.tasks.map(t => t.referent), ...S.inbox.map(i => i.referent), ...S.dossiers.map(d => d.responsable)];
+  const seen = new Map();
+  raw.forEach(r => { r = String(r || '').trim(); if (r && !seen.has(norm(r))) seen.set(norm(r), r); });
+  return [...seen.values()].sort((a, b) => a.localeCompare(b, 'fr'));
+}
 function renderDatalists() {
-  const key = Store.rev + '|' + S.tasks.length;
+  const key = Store.rev + '|' + S.tasks.length + '|' + S.inbox.length + '|' + S.dossiers.length;
   if (renderDatalists.key === key && renderDatalists.S === S) return;
   renderDatalists.key = key; renderDatalists.S = S;
-  $('referents-list').innerHTML = [...new Set(S.tasks.map(t => t.referent.trim()))].sort((a, b) => a.localeCompare(b, 'fr'))
+  $('referents-list').innerHTML = allReferents()
     .map(r => `<option value="${esc(r)}"></option>`).join('');
   $('themes-list').innerHTML = [...new Set([...THEME_SUGGESTIONS, ...S.tasks.map(t => t.thematique)])]
     .map(r => `<option value="${esc(r)}"></option>`).join('');
@@ -5065,6 +5079,49 @@ document.addEventListener('drop', (e) => {
 });
 
 $('quickInput').addEventListener('input', renderQuickPreview);
+const QS = { list: [], idx: 0, start: 0, end: 0 };
+function hideQuickSuggest() { $('quickSuggest').hidden = true; QS.list = []; }
+function updateQuickSuggest() {
+  const inp = $('quickInput'), box = $('quickSuggest');
+  const pos = inp.selectionStart == null ? inp.value.length : inp.selectionStart;
+  const m = inp.value.slice(0, pos).match(/(^|\s)@([^\s@#!+]*)$/);
+  if (!m) return hideQuickSuggest();
+  const q = norm(m[2].replace(/_/g, ' '));
+  const list = allReferents().filter(r => !q || norm(r).startsWith(q) || norm(r).split(/\s+/).some(w => w.startsWith(q))).slice(0, 8);
+  if (!list.length) return hideQuickSuggest();
+  const tail = inp.value.slice(pos).match(/^[^\s@#!+]*/)[0];
+  Object.assign(QS, { list, idx: Math.min(QS.idx, list.length - 1), start: pos - m[2].length, end: pos + tail.length });
+  box.innerHTML = '<div class="qs-title">Référents déjà utilisés</div>' +
+    list.map((r, i) => `<button type="button" role="option" class="${i === QS.idx ? 'on' : ''}" data-i="${i}">${esc(r)}</button>`).join('') +
+    '<div class="qs-hint">↑ ↓ choisir · Entrée ou Tab valider · Échap fermer</div>';
+  box.hidden = false;
+}
+function pickQuickSuggest(i) {
+  const inp = $('quickInput'), r = QS.list[i];
+  if (!r) return;
+  const ins = r.replace(/\s+/g, '_') + ' ';
+  const after = inp.value.slice(QS.end).replace(/^\s+/, '');
+  inp.value = inp.value.slice(0, QS.start) + ins + after;
+  const c = QS.start + ins.length;
+  inp.setSelectionRange(c, c);
+  hideQuickSuggest();
+  inp.dispatchEvent(new Event('input'));
+  inp.focus();
+}
+$('quickInput').addEventListener('input', () => { QS.idx = 0; updateQuickSuggest(); });
+$('quickInput').addEventListener('click', updateQuickSuggest);
+$('quickInput').addEventListener('blur', () => setTimeout(hideQuickSuggest, 150));
+$('quickSuggest').addEventListener('mousedown', e => e.preventDefault());
+$('quickSuggest').addEventListener('click', e => { const b = e.target.closest('button[data-i]'); if (b) pickQuickSuggest(+b.dataset.i); });
+$('quickBar').addEventListener('keydown', e => {
+  if (e.target.id !== 'quickInput' || $('quickSuggest').hidden || !QS.list.length) return;
+  const n = QS.list.length;
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { QS.idx = (QS.idx + (e.key === 'ArrowDown' ? 1 : n - 1)) % n; updateQuickSuggest(); }
+  else if (e.key === 'Enter' || e.key === 'Tab') pickQuickSuggest(QS.idx);
+  else if (e.key === 'Escape') hideQuickSuggest();
+  else return;
+  e.preventDefault(); e.stopImmediatePropagation();
+}, true);
 $('quickInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); quickAdd(); } });
 $('quickAddBtn').addEventListener('click', quickAdd);
 $('searchInput').addEventListener('input', (e) => {
