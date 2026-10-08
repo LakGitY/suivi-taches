@@ -151,6 +151,25 @@
   .quick-bar:focus-within .quick-preview, .quick-bar.has-text .quick-preview { display: flex; }
   .quick-preview .meta { margin-left: auto; }
   .quick-row { position: relative; }
+  .qpop { position: fixed; z-index: 60; width: 380px; max-width: calc(100vw - 16px); background: var(--card); border: 1px solid var(--line-strong); border-radius: 10px; box-shadow: var(--shadow-lg); padding: 12px 14px; animation: fadeIn .12s; }
+  .qpop[hidden] { display: none; }
+  .qpop-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 13.5px; }
+  .qpop-head b::first-letter { text-transform: uppercase; }
+  .qpop-field { position: relative; }
+  .qpop-field input { width: 100%; padding: 9px 10px; border: 1px solid var(--line-strong); border-radius: 7px; font-size: 15px; background: var(--field); color: var(--ink); }
+  .qpop-field input:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 3px color-mix(in srgb, var(--navy) 15%, transparent); }
+  .qpop-field .quick-suggest { left: 0; top: calc(100% + 4px); }
+  .qpop-preview { display: flex; flex-wrap: wrap; gap: 5px; margin: 8px 0 4px; font-size: 12.5px; color: var(--ink-soft); min-height: 22px; align-items: center; }
+  .qpop-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+  .cal-cell { cursor: copy; position: relative; }
+  .cal-cell .cal-day, .cal-cell .cal-chip, .cal-cell .cal-more { cursor: pointer; }
+  .cal-add { position: absolute; right: 4px; bottom: 4px; width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--line-strong); background: var(--card); color: var(--navy); font-size: 15px; line-height: 1; display: none; align-items: center; justify-content: center; padding: 0; }
+  .cal-cell:hover .cal-add, .cal-cell:focus-within .cal-add { display: flex; }
+  @media (hover: none) { .cal-add { display: flex; } }
+  .plan-grid { cursor: copy; }
+  .plan-grid .plan-block { cursor: grab; }
+  .plan-ghost { position: absolute; left: 4px; right: 4px; border: 2px dashed var(--navy); border-radius: 6px; background: var(--tint-navy); pointer-events: none; font-size: 11.5px; color: var(--navy); padding: 2px 6px; font-weight: 600; }
+  @media (max-width: 600px) { .qpop { left: 8px !important; right: 8px; top: auto !important; bottom: 8px; width: auto; } }
   .theme-add { display: flex; gap: 6px; margin: 6px 0 4px; }
   .theme-add input { flex: 1; min-width: 0; }
   .quick-suggest { position: absolute; left: 18px; top: calc(100% + 6px); z-index: 30; min-width: 240px; max-width: 360px; background: var(--card); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow-lg); padding: 4px; }
@@ -925,6 +944,18 @@
   <datalist id="themes-list"></datalist>
 </form>
 
+<div class="qpop" id="qpop" role="dialog" aria-modal="false" aria-labelledby="qpopTitle" hidden>
+  <div class="qpop-head"><b id="qpopTitle">Nouvelle tâche</b><button type="button" class="icon-btn" data-action="qpopClose" aria-label="Fermer">✕</button></div>
+  <div class="qpop-field">
+    <input type="text" id="qpopInput" autocomplete="off" placeholder="Intitulé  @référent  #thématique  ~30m  !haute" aria-label="Intitulé de la tâche">
+    <div class="quick-suggest" id="qpopSuggest" role="listbox" hidden></div>
+  </div>
+  <div class="qpop-preview" id="qpopPreview"></div>
+  <div class="qpop-foot">
+    <button type="button" class="link-btn" data-action="qpopMore">Plus d’options</button>
+    <button type="button" class="btn-primary small" data-action="qpopCreate">Créer</button>
+  </div>
+</div>
 <form class="task-form drawer wide" id="noteForm" hidden>
   <div class="head">
     <h2 class="font-display" id="noteFormTitle">Nouvelle note</h2>
@@ -3420,6 +3451,7 @@ function renderCalendar() {
       <button class="cal-day" data-action="calDay" data-date="${iso}" aria-label="${dt.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}, ${list.length} élément(s)${ld.minutes ? ', ' + fmtDuration(ld.minutes) + ' estimées' : ''}${heavy ? ', journée chargée' : ''}">
         <span>${UI.calMode === 'semaine' ? WEEK_HEAD[(dt.getDay() + 6) % 7] + ' ' : ''}${dt.getDate()}</span><span class="cal-badges">${ld.minutes ? `<span class="cal-hours num" title="Temps estimé">${fmtDuration(ld.minutes)}</span>` : ''}${list.length ? `<span class="cal-count">${list.length}</span>` : ''}</span></button>
       <div class="cal-items">${list.slice(0, max).map(it => calChipHTML(it, iso)).join('')}${list.length > max ? `<button class="cal-more" data-action="calDay" data-date="${iso}">+${list.length - max}</button>` : ''}</div>
+      <button class="cal-add" data-action="calAdd" data-date="${iso}" aria-label="Ajouter une tâche le ${formatDate(iso)}" title="Ajouter une tâche ce jour-là">+</button>
     </div>`;
   }).join('');
   const dayList = items[UI.calDay] || [];
@@ -3443,8 +3475,8 @@ function renderCalendar() {
       ${UI.calMode === 'mois' ? WEEK_HEAD.map(w => `<div class="cal-wd">${w}</div>`).join('') : ''}
       ${cells}
     </div>
-    <p class="meta" style="margin:8px 0 18px">Glisse un élément sur un autre jour pour changer sa date. Journée chargée à partir de ${thr} éléments ou de ${fmtDuration(capMin)} estimées (réglable dans les Paramètres).</p>
-    <div class="today-section"><h3>${esc(dayLabel.charAt(0).toUpperCase() + dayLabel.slice(1))}<span class="n mono">${dayList.length}</span>${dayLoad(UI.calDay).minutes ? `<span class="h-extra">${fmtDuration(dayLoad(UI.calDay).minutes)} estimées</span>` : ''}</h3>
+    <p class="meta" style="margin:8px 0 18px">Clique dans une case vide pour y ajouter une tâche. Glisse un élément sur un autre jour pour changer sa date. Journée chargée à partir de ${thr} éléments ou de ${fmtDuration(capMin)} estimées (réglable dans les Paramètres).</p>
+    <div class="today-section"><h3>${esc(dayLabel.charAt(0).toUpperCase() + dayLabel.slice(1))}<span class="n mono">${dayList.length}</span>${dayLoad(UI.calDay).minutes ? `<span class="h-extra">${fmtDuration(dayLoad(UI.calDay).minutes)} estimées</span>` : ''}<button class="mini-btn" style="margin-left:auto" data-action="calAdd" data-date="${UI.calDay}">+ Tâche ce jour</button></h3>
       ${dayOther.map(it => `<div class="row-card"><span class="txt">${it.kind === 'jalon' ? '◆ Jalon : ' : '▣ Échéance du dossier : '}<b>${esc(it.label)}</b> <span class="meta">· ${esc(it.dossier.nom)}</span></span>
         <button class="mini-btn" data-action="openDossier" data-id="${esc(it.id)}">Ouvrir le dossier</button></div>`).join('')}
       ${dayTasks.length ? taskListHTML(dayTasks) : (dayOther.length ? '' : '<div class="hint-box">Rien de prévu ce jour-là.</div>')}
@@ -3559,7 +3591,7 @@ function planningHTML(iso) {
         <button class="icon-btn" data-action="planTask" data-id="${esc(t.id)}" aria-label="Placer au prochain créneau libre" title="Placer au prochain créneau libre">+</button></div>`).join('')}</div>`
       : '<p class="meta plan-empty">Étoile des tâches ou fixe des échéances au jour pour les planifier.</p>'}
     <div class="plan-grid" style="height:${H}px" data-plan-date="${iso}" data-plan-start="${d0}">${hours}${now}${blocks.map(blockHTML).join('')}</div>
-    <p class="meta">Glisse une tâche ou un créneau sur une heure. Plage réglable dans les Paramètres.</p>
+    <p class="meta">Clique sur une heure libre pour y créer une tâche. Glisse une tâche ou un créneau pour le déplacer. Plage réglable dans les Paramètres.</p>
   </aside>`;
 }
 
@@ -4904,6 +4936,10 @@ const Actions = {
     UI.dossierId = null;
     if (commit()) undoToast('Dossier supprimé (ses tâches et notes sont conservées)', e);
   },
+  calAdd: (d, el) => { const r = el.getBoundingClientRect(); qpopOpen(d.date, null, r.left, r.bottom); },
+  qpopClose: () => qpopClose(),
+  qpopCreate: () => qpopCreate(),
+  qpopMore: () => qpopMore(),
   toggleDFilters: () => { UI.dFiltersOpen = !UI.dFiltersOpen; render(); },
   dStatus: d => { UI.dStatus = d.value; render(); },
   setDLayout: d => { S.settings.dossierMode = d.mode === 'liste' ? 'liste' : 'cartes'; quietSave(); render(); },
@@ -5286,10 +5322,12 @@ document.addEventListener('drop', (e) => {
 });
 
 $('quickInput').addEventListener('input', renderQuickPreview);
-const QS = { list: [], idx: 0, start: 0, end: 0 };
-function hideQuickSuggest() { $('quickSuggest').hidden = true; QS.list = []; }
-function updateQuickSuggest() {
-  const inp = $('quickInput'), box = $('quickSuggest');
+const QS = { list: [], idx: 0, start: 0, end: 0, inp: null, box: null };
+function hideQuickSuggest() { if (QS.box) QS.box.hidden = true; QS.list = []; }
+function updateQuickSuggest(inp, box) {
+  inp = inp || QS.inp || $('quickInput'); box = box || QS.box || $('quickSuggest');
+  if (QS.box && QS.box !== box) QS.box.hidden = true;
+  QS.inp = inp; QS.box = box;
   const pos = inp.selectionStart == null ? inp.value.length : inp.selectionStart;
   const m = inp.value.slice(0, pos).match(/(^|\s)([@#])([^\s@#!+]*)$/);
   if (!m) return hideQuickSuggest();
@@ -5305,8 +5343,8 @@ function updateQuickSuggest() {
   box.hidden = false;
 }
 function pickQuickSuggest(i) {
-  const inp = $('quickInput'), r = QS.list[i];
-  if (!r) return;
+  const inp = QS.inp, r = QS.list[i];
+  if (!inp || !r) return;
   const ins = r.replace(/\s+/g, '_') + ' ';
   const after = inp.value.slice(QS.end).replace(/^\s+/, '');
   inp.value = inp.value.slice(0, QS.start) + ins + after;
@@ -5316,21 +5354,114 @@ function pickQuickSuggest(i) {
   inp.dispatchEvent(new Event('input'));
   inp.focus();
 }
-$('quickInput').addEventListener('input', () => { QS.idx = 0; updateQuickSuggest(); });
-$('quickInput').addEventListener('click', updateQuickSuggest);
-$('newTheme').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); Actions.addTheme({}); } });
-$('quickInput').addEventListener('blur', () => setTimeout(hideQuickSuggest, 150));
-$('quickSuggest').addEventListener('mousedown', e => e.preventDefault());
-$('quickSuggest').addEventListener('click', e => { const b = e.target.closest('button[data-i]'); if (b) pickQuickSuggest(+b.dataset.i); });
-$('quickBar').addEventListener('keydown', e => {
-  if (e.target.id !== 'quickInput' || $('quickSuggest').hidden || !QS.list.length) return;
-  const n = QS.list.length;
-  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { QS.idx = (QS.idx + (e.key === 'ArrowDown' ? 1 : n - 1)) % n; updateQuickSuggest(); }
-  else if (e.key === 'Enter' || e.key === 'Tab') pickQuickSuggest(QS.idx);
-  else if (e.key === 'Escape') hideQuickSuggest();
-  else return;
-  e.preventDefault(); e.stopImmediatePropagation();
-}, true);
+/* Branche l'aide @référent / #thématique sur un champ de saisie */
+function attachSuggest(inp, box) {
+  inp.addEventListener('input', () => { QS.idx = 0; updateQuickSuggest(inp, box); });
+  inp.addEventListener('click', () => updateQuickSuggest(inp, box));
+  inp.addEventListener('blur', () => setTimeout(() => { if (QS.inp === inp) hideQuickSuggest(); }, 150));
+  box.addEventListener('mousedown', e => e.preventDefault());
+  box.addEventListener('click', e => { const b = e.target.closest('button[data-i]'); if (b) pickQuickSuggest(+b.dataset.i); });
+  inp.addEventListener('keydown', e => {
+    if (box.hidden || !QS.list.length || QS.inp !== inp) return;
+    const n = QS.list.length;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { QS.idx = (QS.idx + (e.key === 'ArrowDown' ? 1 : n - 1)) % n; updateQuickSuggest(inp, box); }
+    else if (e.key === 'Enter' || e.key === 'Tab') pickQuickSuggest(QS.idx);
+    else if (e.key === 'Escape') hideQuickSuggest();
+    else return;
+    e.preventDefault(); e.stopImmediatePropagation();
+  });
+}
+/* ---------- Ajout rapide en un clic depuis le calendrier ou le planning ---------- */
+const QP = { date: '', time: null };
+function qpopOpen(date, time, x, y) {
+  QP.date = date; QP.time = typeof time === 'number' ? time : null;
+  const pop = $('qpop'), dl = parseDay(date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+  $('qpopTitle').textContent = 'Nouvelle tâche · ' + dl + (QP.time !== null ? ' à ' + toHM(QP.time) : '');
+  $('qpopInput').value = '';
+  pop.hidden = false;
+  const w = pop.offsetWidth, h = pop.offsetHeight, vw = window.innerWidth, vh = window.innerHeight;
+  pop.style.left = Math.max(8, Math.min(vw - w - 8, x - 20)) + 'px';
+  pop.style.top = (y + h + 12 < vh ? y + 10 : Math.max(8, y - h - 10)) + 'px';
+  qpopPreview();
+  $('qpopInput').focus();
+}
+function qpopClose() { $('qpop').hidden = true; hideQuickSuggest(); clearGhost(); }
+function qpopParse() {
+  const p = parseQuick($('qpopInput').value.trim());
+  return { ...p, echeance: p.echeance || QP.date, estimation: p.estimation || (QP.time !== null ? 30 : 0) };
+}
+function qpopPreview() {
+  const raw = $('qpopInput').value.trim();
+  if (!raw) { $('qpopPreview').innerHTML = '<span>Tape l’intitulé, puis <kbd>Entrée</kbd>. Le référent (@) et la thématique (#) sont facultatifs.</span>'; return; }
+  const p = qpopParse(), d = findDossier(p.dossierId);
+  $('qpopPreview').innerHTML = [
+    chip(p.referent ? esc(p.referent) : 'Référent à préciser', !!p.referent),
+    chip(esc(p.thematique || 'Autre'), true),
+    p.echeance !== QP.date ? chip('Échéance ' + formatDate(p.echeance), true) : '',
+    d ? chip('Dossier ' + esc(d.nom), true) : '',
+    p.dossierUnknown ? chip('Dossier « ' + esc(p.dossierUnknown) + ' » introuvable', false) : '',
+    p.priorite !== 'normale' ? chip('Priorité ' + PRIO_LABEL[p.priorite].toLowerCase(), true) : '',
+    p.estimation ? chip(fmtDuration(p.estimation), true) : ''
+  ].join(' ');
+}
+function qpopCreate() {
+  const raw = $('qpopInput').value.trim();
+  if (!raw) { $('qpopInput').focus(); return; }
+  const p = qpopParse();
+  if (!p.tache) { $('qpopInput').focus(); return; }
+  const t = createTask({
+    referent: p.referent || 'Non renseigné', tache: p.tache, thematique: p.thematique || 'Autre', echeance: p.echeance,
+    priorite: p.priorite, dossierId: p.dossierId, estimation: p.estimation
+  }, QP.time !== null ? 'Créée depuis le planning' : 'Créée depuis le calendrier');
+  let msg = 'Tâche créée pour le ' + formatDate(t.echeance);
+  if (QP.time !== null && t.echeance === QP.date) {
+    const min = Math.max(15, t.estimation || 30), [, d1] = dayBounds();
+    const slot = overlaps(QP.date, QP.time, min) ? freeSlot(QP.date, min, QP.time) : QP.time;
+    if (slot !== null && slot + min <= d1) { addBlock(t.id, QP.date, slot, min); msg += ', planifiée à ' + toHM(slot); }
+    else msg += ' (pas de créneau libre à cette heure)';
+  }
+  qpopClose();
+  if (commit('tâche ajoutée au calendrier')) showToast(msg + (p.referent ? '.' : '. Référent à préciser.'), () => doUndo(), 5000);
+}
+function qpopMore() {
+  const p = qpopParse();
+  qpopClose();
+  openTaskForm({ preset: { tache: p.tache, referent: p.referent, thematique: p.thematique, echeance: p.echeance, priorite: p.priorite, dossierId: p.dossierId, estimation: p.estimation } });
+}
+/* Repère visuel de l'heure choisie dans le planning */
+function clearGhost() { document.querySelectorAll('.plan-ghost').forEach(g => g.remove()); }
+function planGridTime(grid, clientY) {
+  const r = grid.getBoundingClientRect(), d0 = Number(grid.dataset.planStart) || 0;
+  const [, d1] = dayBounds();
+  return Math.max(d0, Math.min(d1 - 15, d0 + Math.floor((clientY - r.top) / PLAN_PPM / 15) * 15));
+}
+attachSuggest($('qpopInput'), $('qpopSuggest'));
+$('qpopInput').addEventListener('input', qpopPreview);
+$('qpopInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); qpopCreate(); }
+  else if (e.key === 'Escape') { e.preventDefault(); qpopClose(); }
+});
+document.addEventListener('mousedown', e => {
+  if (!$('qpop').hidden && !e.target.closest('#qpop') && !e.target.closest('.cal-cell, .plan-grid, [data-action=calAdd]')) qpopClose();
+});
+document.addEventListener('click', e => {
+  if (e.target.closest('#qpop')) return;
+  const grid = e.target.closest('.plan-grid');
+  if (grid && !e.target.closest('.plan-block')) {
+    const m = planGridTime(grid, e.clientY);
+    clearGhost();
+    const g = document.createElement('div');
+    g.className = 'plan-ghost'; g.style.top = Math.round((m - Number(grid.dataset.planStart)) * PLAN_PPM) + 'px'; g.style.height = Math.round(30 * PLAN_PPM) + 'px';
+    g.textContent = toHM(m);
+    grid.appendChild(g);
+    qpopOpen(grid.dataset.planDate, m, e.clientX, e.clientY);
+    return;
+  }
+  const cell = e.target.closest('.cal-cell');
+  if (cell && !e.target.closest('button') && cell.dataset.dropDate) qpopOpen(cell.dataset.dropDate, null, e.clientX, e.clientY);
+});
+/* Enregistré avant le gestionnaire Entrée de la saisie rapide, pour qu'il passe en premier */
+attachSuggest($('quickInput'), $('quickSuggest'));
 $('quickInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); quickAdd(); } });
 $('quickAddBtn').addEventListener('click', quickAdd);
 $('searchInput').addEventListener('input', (e) => {
