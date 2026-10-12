@@ -19,9 +19,9 @@
     color-scheme: light;
     --paper: #F4F3EF; --side: #ECEAE4; --card: #FFFFFF; --ink: #22231F; --ink-soft: #686760; --ink-faint: #8D8B83;
     --navy: #1E3A5F; --navy-deep: #16263B; --brick: #A33F31; --ochre: #A9761F;
-    --sage: #4A6E41; --line: #E2DFD6; --line-strong: #D2CEC2; --plum: #6B4E7A; --teal: #2F6F73;
+    --sage: #4A6E41; --line: #E2DFD6; --line-strong: #D2CEC2; --plum: #6B4E7A; --teal: #2F6F73; --del: #8A5A2B;
     --field: #FFFFFF; --btn: #1E3A5F; --hover: #F7F6F2; --tint-ochre: #FBF1DC; --tint-ochre-ink: #6E4B0F; --tint-brick: #F7E8E5; --tint-plum: #EFEAF4;
-    --tint-navy: #E6EBF2; --tint-sand: #FBF6EA; --sand-line: #E8D9B5; --tint-teal: #E3EFEF; --tint-sage: #E6EFE3; --zero: #B5B0A1;
+    --tint-navy: #E6EBF2; --tint-sand: #FBF6EA; --sand-line: #E8D9B5; --tint-teal: #E3EFEF; --tint-del: #F4EBE1; --tint-sage: #E6EFE3; --zero: #B5B0A1;
     --shadow: 0 1px 2px rgba(30, 30, 20, 0.05);
     --shadow-lg: 0 12px 40px rgba(20, 25, 35, 0.22);
     --radius: 8px;
@@ -31,9 +31,9 @@
     color-scheme: dark;
     --paper: #15171A; --side: #1A1D21; --card: #1F2226; --field: #262A2F; --ink: #E7E5DF; --ink-soft: #A6A49A; --ink-faint: #7E7C74;
     --navy: #9DBCE3; --btn: #2F5A8A; --hover: #252930;
-    --brick: #E3907F; --ochre: #D8AA4E; --sage: #8DBA7E; --line: #2F343B; --line-strong: #3E444C; --plum: #BC9FD0; --teal: #71BABE;
+    --brick: #E3907F; --ochre: #D8AA4E; --sage: #8DBA7E; --line: #2F343B; --line-strong: #3E444C; --plum: #BC9FD0; --teal: #71BABE; --del: #D9A877;
     --tint-ochre: #3A3120; --tint-ochre-ink: #E9C77C; --tint-brick: #3E2724; --tint-plum: #332A3B; --tint-navy: #22324A;
-    --tint-sand: #2D2A21; --sand-line: #4B4331; --tint-teal: #1F3536; --tint-sage: #243225; --zero: #5B5D61;
+    --tint-sand: #2D2A21; --sand-line: #4B4331; --tint-teal: #1F3536; --tint-del: #352A20; --tint-sage: #243225; --zero: #5B5D61;
     --shadow: none; --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.5);
   }
   @media (prefers-color-scheme: dark) {
@@ -41,9 +41,9 @@
     color-scheme: dark;
     --paper: #15171A; --side: #1A1D21; --card: #1F2226; --field: #262A2F; --ink: #E7E5DF; --ink-soft: #A6A49A; --ink-faint: #7E7C74;
     --navy: #9DBCE3; --btn: #2F5A8A; --hover: #252930;
-    --brick: #E3907F; --ochre: #D8AA4E; --sage: #8DBA7E; --line: #2F343B; --line-strong: #3E444C; --plum: #BC9FD0; --teal: #71BABE;
+    --brick: #E3907F; --ochre: #D8AA4E; --sage: #8DBA7E; --line: #2F343B; --line-strong: #3E444C; --plum: #BC9FD0; --teal: #71BABE; --del: #D9A877;
     --tint-ochre: #3A3120; --tint-ochre-ink: #E9C77C; --tint-brick: #3E2724; --tint-plum: #332A3B; --tint-navy: #22324A;
-    --tint-sand: #2D2A21; --sand-line: #4B4331; --tint-teal: #1F3536; --tint-sage: #243225; --zero: #5B5D61;
+    --tint-sand: #2D2A21; --sand-line: #4B4331; --tint-teal: #1F3536; --tint-del: #352A20; --tint-sage: #243225; --zero: #5B5D61;
     --shadow: none; --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.5);
     }
   }
@@ -262,6 +262,9 @@
   .tag { font-size: 11.5px; padding: 1px 8px; border-radius: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; font-weight: 500; flex-shrink: 1; min-width: 28px; }
   .tag-teal { background: var(--tint-teal); color: var(--teal); }
   .tag-plum { background: var(--tint-plum); color: var(--plum); }
+  .tag-del { background: var(--tint-del); color: var(--del); }
+  .delegue-row { display: flex; align-items: center; gap: 8px; font-size: 13.5px; margin: 10px 0 4px; cursor: pointer; }
+  .delegue-row input { width: 16px; height: 16px; accent-color: var(--del); }
   .tag-brick { background: var(--tint-brick); color: var(--brick); }
   .tag-ochre { background: var(--tint-ochre); color: var(--tint-ochre-ink); }
   .tag-navy { background: var(--tint-navy); color: var(--navy); }
@@ -923,6 +926,7 @@
       <select id="f-priorite"><option value="haute">Haute</option><option value="normale" selected>Normale</option><option value="basse">Basse</option></select></div>
   </div>
   <div class="field"><label for="f-dossier">Dossier</label><select id="f-dossier"></select></div>
+  <label class="delegue-row"><input type="checkbox" id="f-delegue"> Tâche déléguée</label>
   <details class="adv" id="advFields">
     <summary>Plus d’options : statut, relance, récurrence</summary>
     <div class="grid2">
@@ -1223,7 +1227,7 @@ const UI = {
 
 function normalizeTask(t) {
   const x = {
-    referent: 'Non renseigné', thematique: 'Autre', status: 'en_cours', relance: '', motif: '', priorite: 'normale',
+    referent: 'Non renseigné', thematique: 'Autre', status: 'en_cours', relance: '', motif: '', priorite: 'normale', delegue: false,
     recurrence: '', checklist: [], updates: [], noteId: '', dossierId: '', focusDate: '', completedAt: '',
     spawnedNext: false, icsSeq: 0, source: null, versions: [], estimation: 0, timeSpent: 0, focusOrder: 0, updatedAt: '', ...t
   };
@@ -1427,6 +1431,7 @@ function updateTask(id, f, noVersion) {
   if (f.echeance !== undefined && f.echeance !== t.echeance)
     log.push('Échéance modifiée : ' + formatDate(t.echeance) + ' → ' + formatDate(f.echeance));
   if (f.referent !== undefined && f.referent !== t.referent) log.push('Référent : ' + t.referent + ' → ' + f.referent);
+  if (f.delegue !== undefined && !!f.delegue !== !!t.delegue) log.push(f.delegue ? 'Tâche déléguée' : 'Délégation retirée');
   if (f.priorite !== undefined && f.priorite !== t.priorite)
     log.push('Priorité : ' + PRIO_LABEL[t.priorite] + ' → ' + PRIO_LABEL[f.priorite]);
   if (f.dossierId !== undefined && f.dossierId !== t.dossierId) {
@@ -1454,7 +1459,7 @@ function toggleComplete(id) {
   if (done && t.recurrence && RECUR_MONTHS[t.recurrence] && !t.spawnedNext) {
     const n = RECUR_MONTHS[t.recurrence];
     spawned = normalizeTask({
-      id: uid(), referent: t.referent, tache: t.tache, thematique: t.thematique, priorite: t.priorite,
+      id: uid(), referent: t.referent, tache: t.tache, thematique: t.thematique, priorite: t.priorite, delegue: !!t.delegue,
       recurrence: t.recurrence, dossierId: t.dossierId, estimation: t.estimation, dateAjout: new Date().toISOString(),
       echeance: addMonthsISO(t.echeance, n), relance: t.relance ? addMonthsISO(t.relance, n) : '',
       checklist: t.checklist.map(i => ({ id: uid(), text: i.text, done: false })),
@@ -1479,6 +1484,12 @@ function setAttente(id, on, motif) {
   t.status = on ? 'en_attente' : 'en_cours';
   t.motif = on ? (motif || '') : '';
   t.updates.unshift(logEntry(on ? 'Mise en attente' + (motif ? ' : ' + motif : '') : 'Reprise du dossier'));
+}
+function toggleDelegue(id) {
+  const t = findTask(id);
+  if (!t) return;
+  t.delegue = !t.delegue;
+  t.updates.unshift(logEntry(t.delegue ? 'Tâche déléguée' : 'Délégation retirée'));
 }
 function togglePin(id) {
   const t = findTask(id);
@@ -1704,7 +1715,7 @@ function sanitizeTask(t, fx, seen) {
     id: cleanId(t.id, fx, seen), referent: cleanStr(t.referent, 200).trim() || 'Non renseigné', tache,
     thematique: cleanStr(t.thematique, 100).trim() || 'Autre',
     dateAjout: cleanIso(t.dateAjout) || new Date().toISOString(), echeance, status,
-    relance: cleanDate(t.relance), motif: cleanStr(t.motif, 300),
+    relance: cleanDate(t.relance), motif: cleanStr(t.motif, 300), delegue: !!t.delegue,
     priorite: PRIO_LABEL[t.priorite] ? t.priorite : 'normale', recurrence: RECUR_LABEL[t.recurrence] ? t.recurrence : '',
     checklist: Array.isArray(t.checklist) ? t.checklist.filter(i => i && typeof i === 'object' && i.text)
       .map(i => ({ id: cleanId(i.id, fx), text: cleanStr(i.text, 300), done: !!i.done })) : [],
@@ -1795,7 +1806,7 @@ function sanitizeImport(imported) {
       })()
     } : null,
     views: imported && Array.isArray(imported.views) ? imported.views.slice(0, 50).filter(v => v && typeof v === 'object' && v.nom).map(v => ({
-      id: cleanId(v.id, fx), nom: cleanStr(v.nom, 80), taskTab: ['actifs', 'retard', 'bientot', 'attente', 'relance', 'termine'].includes(v.taskTab) ? v.taskTab : 'actifs',
+      id: cleanId(v.id, fx), nom: cleanStr(v.nom, 80), taskTab: ['actifs', 'retard', 'bientot', 'attente', 'relance', 'termine', 'delegue'].includes(v.taskTab) ? v.taskTab : 'actifs',
       theme: cleanStr(v.theme || 'Toutes', 100), dossierFilter: v.dossierFilter === 'none' ? 'none' : refId(v.dossierFilter), search: cleanStr(v.search, 200),
       sortBy: ['echeance', 'priorite', 'referent', 'titre'].includes(v.sortBy) ? v.sortBy : 'echeance', updatedAt: cleanIso(v.updatedAt) })) : null,
     themes: imported && Array.isArray(imported.themes) ? imported.themes.slice(0, 200).filter(x => x && typeof x === 'object' && String(x.nom || '').trim()).map(x => ({
@@ -1942,13 +1953,13 @@ function buildIcs(task, kind) {
 
 /* ---------- Export Excel (CSV) ---------- */
 function buildCsv(list) {
-  const headers = ['Référent', 'Tâche', 'Thématique', 'Dossier', 'Priorité', 'Statut', 'En attente de', "Date d'ajout", 'Échéance',
+  const headers = ['Référent', 'Tâche', 'Thématique', 'Dossier', 'Priorité', 'Statut', 'Déléguée', 'En attente de', "Date d'ajout", 'Échéance',
     'Date de relance', 'Récurrence', 'Étapes', "Dernier point d'avancement", 'Notes liées', 'Date de clôture', 'Délai de traitement (jours)'];
   const cell = v => { const s = String(v === undefined || v === null ? '' : v); return /[";\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
   const rows = list.map(t => {
     const last = t.updates[0];
     const d = findDossier(t.dossierId);
-    return [t.referent, t.tache, t.thematique, d ? d.nom : '', PRIO_LABEL[t.priorite], STATUS_LABEL[t.status], t.motif,
+    return [t.referent, t.tache, t.thematique, d ? d.nom : '', PRIO_LABEL[t.priorite], STATUS_LABEL[t.status], t.delegue ? 'Oui' : '', t.motif,
       formatDate(t.dateAjout), formatDate(t.echeance), t.relance ? formatDate(t.relance) : '',
       t.recurrence ? RECUR_LABEL[t.recurrence] : '',
       t.checklist.length ? t.checklist.filter(i => i.done).length + '/' + t.checklist.length : '',
@@ -2397,6 +2408,7 @@ const emptyHTML = (title, sub, kind) => `<div class="empty">${emptyArt(kind || '
 /* ---------- Tâche : ligne compacte, carte et panneau de détail (v2.2) ---------- */
 function tagsOf(t) {
   const out = [];
+  if (t.delegue && t.status !== 'termine') out.push(['Déléguée', 'del', 'Tâche déléguée à ' + t.referent]);
   if (needsRelance(t)) out.push(['À relancer', 'teal', 'Relance prévue le ' + formatDate(t.relance)]);
   if (t.status === 'en_attente') out.push([t.motif ? 'Attente : ' + (t.motif.length > 14 ? t.motif.slice(0, 13) + '…' : t.motif) : 'En attente', 'plum', t.motif ? 'En attente de : ' + t.motif : 'En attente']);
   if (t.priorite === 'haute' && t.status !== 'termine') out.push(['Prioritaire', 'brick', 'Priorité haute']);
@@ -2496,6 +2508,7 @@ function detailHTML(t) {
       ${f('Dossier', `<select id="dt-dossier" data-field="dossierId" data-id="${id}">${dossierOptions(t.dossierId, true)}</select>`, true)}
       ${t.status === 'en_attente' ? f('En attente de', `<input type="text" id="dt-motif" data-field="motif" data-id="${id}" value="${esc(t.motif)}" placeholder="ex : signature du Maire">`, true) : ''}
     </div>
+    <label class="delegue-row"><input type="checkbox" data-action="delegue" data-id="${id}" ${t.delegue ? 'checked' : ''}> Tâche déléguée</label>
     <div class="detail-actions">
       <button class="mini-btn${isDone ? '' : ' primary'}" data-action="complete" data-id="${id}">${isDone ? 'Rouvrir' : '✓ Terminer'}</button>
       <button class="mini-btn" data-action="pin" data-id="${id}">${pinned ? '★ Dans ma journée' : '☆ Ma journée'}</button>
@@ -2844,11 +2857,12 @@ function renderReview() {
 
 /* ---------- Tâches ---------- */
 const TASK_TABS = [['actifs', 'Actifs', 'var(--navy)'], ['retard', 'En retard', 'var(--brick)'], ['bientot', 'Échéance proche', 'var(--ochre)'],
-  ['attente', 'En attente', 'var(--plum)'], ['relance', 'À relancer', 'var(--teal)'], ['termine', 'Terminées', 'var(--sage)']];
+  ['attente', 'En attente', 'var(--plum)'], ['relance', 'À relancer', 'var(--teal)'], ['termine', 'Terminées', 'var(--sage)'], ['delegue', 'Déléguées', 'var(--del)']];
 
 function matchesTab(t, tab) {
   if (tab === 'actifs') return t.status !== 'termine';
   if (tab === 'relance') return needsRelance(t);
+  if (tab === 'delegue') return !!t.delegue && t.status !== 'termine';
   if (tab === 'termine') return t.status === 'termine' && (UI.showArchived || !isArchived(t));
   return getUrgency(t) === tab;
 }
@@ -2887,13 +2901,14 @@ function listHeadHTML() {
 
 function renderTasks() {
   const counts = memo('tabCounts', () => {
-    const c = { actifs: 0, retard: 0, bientot: 0, attente: 0, relance: 0, termine: 0 };
+    const c = { actifs: 0, retard: 0, bientot: 0, attente: 0, relance: 0, termine: 0, delegue: 0 };
     S.tasks.forEach(t => {
       if (t.status === 'termine') { if (UI.showArchived || !isArchived(t)) c.termine++; return; }
       c.actifs++;
       const u = getUrgency(t);
       if (c[u] !== undefined) c[u]++;
       if (needsRelance(t)) c.relance++;
+      if (t.delegue) c.delegue++;
     });
     return c;
   }) ;
@@ -3674,6 +3689,7 @@ function openTaskForm(opts) {
   $('f-priorite').value = v.priorite || 'normale';
   $('f-statut').value = v.status || 'en_cours';
   $('f-relance').value = v.relance || '';
+  $('f-delegue').checked = !!v.delegue;
   $('f-motif').value = v.motif || '';
   $('f-recurrence').value = v.recurrence || '';
   $('f-estimation').innerHTML = estimationOptions(v.estimation || 0);
@@ -3701,7 +3717,7 @@ function submitTaskForm(e) {
     thematique: $('f-thematique').value.trim() || 'Autre', dossierId: $('f-dossier').value,
     priorite: $('f-priorite').value, status: $('f-statut').value, relance: $('f-relance').value,
     motif: $('f-statut').value === 'en_attente' ? $('f-motif').value.trim() : '', recurrence: $('f-recurrence').value,
-    estimation: Number($('f-estimation').value) || 0
+    estimation: Number($('f-estimation').value) || 0, delegue: $('f-delegue').checked
   };
   if (!f.referent || !f.tache || !f.echeance) return;
   const id = $('f-id').value;
@@ -4866,6 +4882,7 @@ const Actions = {
   expand: d => { UI.detailId = UI.detailId === d.id ? null : d.id; UI.detailDirty = false; if (UI.detailId) setCursor(d.id); render(); },
   closeDetail: () => closeDetail(),
   relance: d => { setRelance(d.id, d.days === '' ? null : Number(d.days)); commit('relance'); },
+  delegue: d => { toggleDelegue(d.id); commit('délégation'); },
   attente: d => {
     const t = findTask(d.id);
     if (!t) return;
