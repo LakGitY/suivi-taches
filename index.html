@@ -2408,12 +2408,12 @@ const emptyHTML = (title, sub, kind) => `<div class="empty">${emptyArt(kind || '
 /* ---------- Tâche : ligne compacte, carte et panneau de détail (v2.2) ---------- */
 function tagsOf(t) {
   const out = [];
-  if (t.delegue && t.status !== 'termine') out.push(['Déléguée', 'del', 'Tâche déléguée à ' + t.referent]);
   if (needsRelance(t)) out.push(['À relancer', 'teal', 'Relance prévue le ' + formatDate(t.relance)]);
   if (t.status === 'en_attente') out.push([t.motif ? 'Attente : ' + (t.motif.length > 14 ? t.motif.slice(0, 13) + '…' : t.motif) : 'En attente', 'plum', t.motif ? 'En attente de : ' + t.motif : 'En attente']);
   if (t.priorite === 'haute' && t.status !== 'termine') out.push(['Prioritaire', 'brick', 'Priorité haute']);
   if (isOverTarget(t)) out.push(['Hors délai cible', 'ochre', 'Délai cible de ' + targetOf(t.thematique) + ' jours dépassé']);
   if (t.recurrence) out.push(['↻ ' + RECUR_LABEL[t.recurrence], 'navy', 'Tâche récurrente']);
+  if (t.delegue && t.status !== 'termine') out.unshift(['Déléguée', 'del', 'Tâche déléguée à ' + t.referent]);
   return out.slice(0, 2);
 }
 const tagHTML = ([l, c, title]) => `<span class="tag tag-${c}"${title ? ` title="${esc(title)}"` : ''}>${esc(l)}</span>`;
