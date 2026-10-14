@@ -353,10 +353,23 @@
   .form-actions { display: flex; gap: 10px; position: sticky; bottom: -28px; background: var(--card); padding: 12px 0 0; }
   .form-actions .btn-primary { flex: 1; }
   .fmt-bar { display: flex; gap: 4px; flex-wrap: wrap; margin: 6px 0 4px; }
-  #noteForm .note-edit { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-  .note-preview-label { font-size: 12px; color: var(--ink-soft); font-weight: 500; margin: 10px 0 4px; }
-  .note-preview { border: 1px dashed var(--line-strong); border-radius: 6px; padding: 10px 12px; min-height: 120px; max-height: 60vh; overflow: auto; font-size: 14px; background: var(--paper); }
-  #n-contenu { min-height: 300px; font-size: 14px; line-height: 1.5; resize: vertical; }
+  #noteForm .note-edit { display: block; }
+  .fmt-bar .mini-btn { min-width: 34px; }
+  .fmt-bar .sep { width: 1px; background: var(--line-strong); margin: 3px 4px; }
+  .fmt-bar .mini-btn.on { background: var(--tint-navy); border-color: var(--navy); color: var(--navy); }
+  .note-editor { margin-top: 4px; padding: 10px 12px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--field);
+    min-height: 320px; max-height: 65vh; overflow: auto; resize: vertical; font-size: 14px; line-height: 1.55; outline: none; overflow-wrap: anywhere; }
+  .note-editor:focus { border-color: var(--navy); box-shadow: 0 0 0 3px color-mix(in srgb, var(--navy) 14%, transparent); }
+  .note-editor.is-empty::before { content: attr(data-placeholder); color: var(--ink-faint); pointer-events: none; position: absolute; }
+  .note-editor h4 { font-size: 15.5px; margin: 10px 0 4px; }
+  .note-editor div, .note-editor p { margin: 0; }
+  .note-editor ul, .note-editor ol { margin: 2px 0 4px; padding-left: 24px; }
+  .note-editor li.todo { list-style: none; position: relative; margin-left: -4px; padding-left: 4px; }
+  .note-editor li.todo::before { content: ''; position: absolute; left: -20px; top: 4px; width: 14px; height: 14px; border: 1.5px solid var(--ink-soft);
+    border-radius: 3px; background: var(--card); cursor: pointer; box-sizing: border-box; }
+  .note-editor li.todo[data-st="x"]::before, .note-editor li.todo[data-st="X"]::before, .note-editor li.todo[data-st="t"]::before {
+    background: var(--sage); border-color: var(--sage); content: '✓'; color: #fff; font-size: 11px; line-height: 11px; text-align: center; }
+  .note-editor li.todo[data-st="x"], .note-editor li.todo[data-st="X"] { text-decoration: line-through; color: var(--ink-faint); }
 
   /* ===== Notes ===== */
   .note-list { display: flex; flex-direction: column; gap: 10px; }
@@ -373,6 +386,7 @@
   .rich h4 { font-size: 14.5px; margin: 10px 0 4px; }
   .rich p { margin: 0 0 4px; }
   .rich ul, .rich ol { margin: 2px 0 6px; padding-left: 20px; }
+  .rich ul.dash, .note-editor ul.dash { list-style-type: "–  "; }
   .rich .sp { height: 6px; }
   .rich li.todo { list-style: none; margin-left: -20px; display: flex; gap: 6px; align-items: baseline; flex-wrap: wrap; }
   .rich li.todo .checked { text-decoration: line-through; color: var(--ink-faint); }
@@ -969,19 +983,26 @@
   <div class="field"><label for="n-template">Modèle</label><select id="n-template"></select></div>
   <div class="field"><label for="n-titre">Titre</label><input type="text" id="n-titre" required placeholder="ex : Réunion CST du 07/10"></div>
   <div class="note-edit">
-    <div class="field"><label for="n-contenu">Contenu</label>
-      <div class="fmt-bar" role="toolbar" aria-label="Mise en forme">
-        <button type="button" class="mini-btn" data-action="fmt" data-fmt="h" title="Titre (## )">Titre</button>
-        <button type="button" class="mini-btn" data-action="fmt" data-fmt="b" title="Gras (**texte**)"><b>G</b></button>
-        <button type="button" class="mini-btn" data-action="fmt" data-fmt="ul" title="Liste (- )">• Liste</button>
-        <button type="button" class="mini-btn" data-action="fmt" data-fmt="todo" title="Action à faire (- [ ] )">☐ Action</button>
+    <div class="field"><label id="n-contenu-label">Contenu</label>
+      <div class="fmt-bar" id="fmtBar" role="toolbar" aria-label="Mise en forme">
+        <button type="button" class="mini-btn" data-action="fmt" data-fmt="h" title="Titre">Titre</button>
+        <span class="sep" aria-hidden="true"></span>
+        <button type="button" class="mini-btn" data-action="fmt" data-fmt="b" data-cmd="bold" title="Gras (Ctrl+B)"><b>G</b></button>
+        <button type="button" class="mini-btn" data-action="fmt" data-fmt="i" data-cmd="italic" title="Italique (Ctrl+I)"><i>I</i></button>
+        <button type="button" class="mini-btn" data-action="fmt" data-fmt="u" data-cmd="underline" title="Souligné (Ctrl+U)"><u>S</u></button>
+        <button type="button" class="mini-btn" data-action="fmt" data-fmt="s" data-cmd="strikeThrough" title="Barré"><s>ab</s></button>
+        <span class="sep" aria-hidden="true"></span>
+        <button type="button" class="mini-btn" data-action="fmt" data-fmt="dash" title="Tiret (– )">– Tiret</button>
+        <button type="button" class="mini-btn" data-action="fmt" data-fmt="ul" data-cmd="insertUnorderedList" title="Liste à puces (taper « * » puis espace)">• Puces</button>
+        <button type="button" class="mini-btn" data-action="fmt" data-fmt="ol" data-cmd="insertOrderedList" title="Liste numérotée (taper « 1. » puis espace)">1. Liste</button>
+        <button type="button" class="mini-btn" data-action="fmt" data-fmt="todo" title="Case à cocher (taper « [] » puis espace)">☐ Case</button>
+        <span class="sep" aria-hidden="true"></span>
         <button type="button" class="mini-btn" data-action="fmt" data-fmt="link" title="Lien ou chemin réseau">Lien</button>
+        <button type="button" class="mini-btn" data-action="fmt" data-fmt="clear" title="Retirer la mise en forme du texte sélectionné">Effacer</button>
       </div>
-      <textarea id="n-contenu" rows="14" placeholder="Prise de notes libre… ## titre, **gras**, - liste, - [ ] action à transformer en tâche"></textarea>
-    </div>
-    <div class="field">
-      <div class="note-preview-label">Aperçu en direct</div>
-      <div class="note-preview rich" id="notePreview" aria-live="polite"></div>
+      <div class="note-editor" id="noteEditor" contenteditable="true" role="textbox" aria-multiline="true" aria-labelledby="n-contenu-label" spellcheck="true"
+        data-placeholder="Prise de notes libre… La mise en forme s’applique directement : gras, souligné, puces, cases à cocher."></div>
+      <textarea id="n-contenu" hidden></textarea>
     </div>
   </div>
   <div class="grid2">
@@ -3340,6 +3361,9 @@ function renderBulkBar() {
 function richInline(s, preview) {
   let x = esc(s);
   x = x.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  x = x.replace(/\+\+(.+?)\+\+/g, '<u>$1</u>');
+  x = x.replace(/~~(.+?)~~/g, '<s>$1</s>');
+  x = x.replace(/(^|[^*\w])\*(?![\s*])([^*]*?[^\s*])\*(?![*\w])/g, '$1<em>$2</em>');
   x = x.replace(/(https?:\/\/[^\s<]+[^\s<.,;:!?)])/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
   x = x.replace(/(^|\s)(\\\\[^\s<]+|[A-Za-z]:\\[^\s<]*)/g, (m, sp, path) =>
     `${sp}<span class="path-chip" title="Chemin de fichier">${path}</span>` + (preview ? '' : `<button class="link-btn" data-action="copyPath" data-path="${path}">copier</button>`));
@@ -3348,7 +3372,7 @@ function richInline(s, preview) {
 function richHTML(text, noteId, preview) {
   const lines = String(text || '').split('\n');
   let html = '', list = '';
-  const close = () => { if (list) { html += '</' + list + '>'; list = ''; } };
+  const close = () => { if (list) { html += '</' + list.split(' ')[0] + '>'; list = ''; } };
   const open = tag => { if (list !== tag) { close(); html += '<' + tag + '>'; list = tag; } };
   lines.forEach((line, i) => {
     let m;
@@ -3361,7 +3385,8 @@ function richHTML(text, noteId, preview) {
         ${st === ' ' && !preview ? `<button class="link-btn" data-action="noteLineToTask" data-id="${esc(noteId)}" data-line="${i}">→ créer la tâche</button>` : ''}
         ${st === 't' ? '<span class="meta">tâche créée</span>' : ''}</li>`;
     }
-    else if ((m = line.match(/^\s*[-*•]\s+(.*)$/))) { open('ul'); html += `<li>${richInline(m[1], preview)}</li>`; }
+    else if ((m = line.match(/^\s*[-–]\s+(.*)$/))) { open('ul class="dash"'); html += `<li>${richInline(m[1], preview)}</li>`; }
+    else if ((m = line.match(/^\s*[*•]\s+(.*)$/))) { open('ul'); html += `<li>${richInline(m[1], preview)}</li>`; }
     else if ((m = line.match(/^\s*\d+[.)]\s+(.*)$/))) { open('ol'); html += `<li>${richInline(m[1], preview)}</li>`; }
     else if (!line.trim()) { close(); html += '<div class="sp"></div>'; }
     else { close(); html += `<p>${richInline(line, preview)}</p>`; }
@@ -3746,10 +3771,9 @@ function openNoteForm(opts) {
   $('noteFormTitle').textContent = n ? 'Modifier la note' : 'Nouvelle note';
   $('n-id').value = n ? n.id : '';
   $('n-titre').value = n ? n.titre : '';
-  $('n-contenu').value = n ? n.contenu : '';
   $('n-thematique').value = n ? n.thematique : '';
   fillTemplateSelect();
-  renderNotePreview();
+  setNoteContent(n ? n.contenu : '');
   $('n-dossier').innerHTML = dossierOptions(n ? n.dossierId : (o.presetDossierId || ''), true);
   const sel = n ? n.taskId : (o.presetTaskId || '');
   $('n-task').innerHTML = '<option value="">Aucune</option>' + S.tasks.filter(t => t.status !== 'termine' || t.id === sel)
@@ -3758,20 +3782,16 @@ function openNoteForm(opts) {
   syncBackdrop();
   $('n-titre').focus();
 }
-function closeNoteForm() { $('noteForm').hidden = true; $('noteForm').reset(); $('n-id').value = ''; syncBackdrop(); }
+function closeNoteForm() { $('noteForm').hidden = true; $('noteForm').reset(); $('n-id').value = ''; NE.el().innerHTML = ''; syncBackdrop(); }
 function fillTemplateSelect() {
   const all = allNoteTemplates();
   const group = (label, list) => list.length ? `<optgroup label="${label}">${list.map(t => `<option value="${esc(t.key)}">${esc(t.label)}</option>`).join('')}</optgroup>` : '';
   $('n-template').innerHTML = '<option value="">Note libre</option>' + group('Modèles intégrés', all.filter(t => !t.mine)) + group('Mes modèles', all.filter(t => t.mine));
   $('n-template').value = '';
 }
-function renderNotePreview() {
-  const v = $('n-contenu').value;
-  $('notePreview').innerHTML = v.trim() ? richHTML(v, '', true) : '<p class="meta">L’aperçu de la mise en forme s’affiche ici pendant la saisie.</p>';
-}
 function saveTemplateFromForm() {
   const contenu = $('n-contenu').value;
-  if (!contenu.trim()) { showToast('Saisis d’abord le contenu du modèle.', null, 3000); $('n-contenu').focus(); return; }
+  if (!contenu.trim()) { showToast('Saisis d’abord le contenu du modèle.', null, 3000); NE.el().focus(); return; }
   const label = prompt('Nom du modèle (il apparaîtra dans la liste « Modèle ») :', $('n-titre').value.trim() || 'Mon modèle');
   if (!label || !label.trim()) return;
   const titre = $('n-titre').value;
@@ -3784,6 +3804,7 @@ function saveTemplateFromForm() {
 }
 function submitNoteForm(e) {
   e.preventDefault();
+  noteEditorChanged();
   const titre = $('n-titre').value.trim();
   if (!titre) return;
   saveNote({
@@ -3798,8 +3819,7 @@ function applyNoteTemplate() {
   if (!tpl) return;
   const contenu = $('n-contenu');
   if (contenu.value.trim() && !confirm('Remplacer le contenu actuel par le modèle ?')) { $('n-template').value = ''; return; }
-  contenu.value = tpl.contenu;
-  renderNotePreview();
+  setNoteContent(tpl.contenu);
   const titre = $('n-titre');
   if (!titre.value.trim()) titre.value = tpl.titre + (key === 'equipe' ? formatDate(todayISO()) : '');
   if (tpl.thematique && !$('n-thematique').value.trim()) $('n-thematique').value = tpl.thematique;
@@ -4389,26 +4409,310 @@ function toggleSelect(id) {
   render();
 }
 
-/* ---------- Notes : mise en forme (P28) ---------- */
-function noteFormat(kind) {
-  const ta = $('n-contenu');
-  const s = ta.selectionStart, e = ta.selectionEnd, v = ta.value;
-  const lineStart = v.lastIndexOf('\n', s - 1) + 1;
-  const prefixes = { h: '## ', ul: '- ', todo: '- [ ] ' };
-  if (kind === 'b') {
-    const sel = v.slice(s, e) || 'texte';
-    ta.value = v.slice(0, s) + '**' + sel + '**' + v.slice(e);
-    ta.setSelectionRange(s + 2, s + 2 + sel.length);
-  } else if (kind === 'link') {
-    const url = prompt('Adresse du lien (https://…) ou chemin réseau (\\\\serveur\\dossier\\fichier.docx)', '');
-    if (!url) return;
-    ta.value = v.slice(0, s) + url.trim() + v.slice(e);
-  } else {
-    const pre = prefixes[kind];
-    ta.value = v.slice(0, lineStart) + pre + v.slice(lineStart);
-    ta.setSelectionRange(s + pre.length, e + pre.length);
+/* ---------- Notes : éditeur unique avec mise en forme directe ---------- */
+/* Le contenu reste enregistré au format texte habituel (## titre, **gras**, - tiret, • puce, - [ ] case),
+   pour que les notes existantes, la recherche et l'export continuent de fonctionner. */
+const NE = { el: () => $('noteEditor'), ta: () => $('n-contenu') };
+const BLOCK_TAGS = new Set(['DIV', 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'UL', 'OL', 'LI', 'BLOCKQUOTE', 'PRE', 'TABLE', 'TR', 'SECTION', 'ARTICLE', 'HEADER', 'FOOTER']);
+
+function noteInlineHTML(s) {
+  let x = esc(s);
+  x = x.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+  x = x.replace(/\+\+(.+?)\+\+/g, '<u>$1</u>');
+  x = x.replace(/~~(.+?)~~/g, '<s>$1</s>');
+  x = x.replace(/(^|[^*\w])\*(?![\s*])([^*]*?[^\s*])\*(?![*\w])/g, '$1<i>$2</i>');
+  return x || '<br>';
+}
+function markupToEditorHTML(text) {
+  const lines = String(text || '').replace(/\r\n?/g, '\n').split('\n');
+  let html = '', list = '';
+  const close = () => { if (list) { html += list === 'ol' ? '</ol>' : '</ul>'; list = ''; } };
+  const open = kind => { if (list !== kind) { close(); html += kind === 'ol' ? '<ol>' : kind === 'dash' ? '<ul class="dash">' : '<ul>'; list = kind; } };
+  lines.forEach(line => {
+    let m;
+    if ((m = line.match(/^\s*#{1,3}\s+(.*)$/))) { close(); html += `<h4>${noteInlineHTML(m[1])}</h4>`; }
+    else if ((m = line.match(TODO_RE))) { open('ul'); html += `<li class="todo" data-st="${esc(m[2])}">${noteInlineHTML(m[4])}</li>`; }
+    else if ((m = line.match(/^\s*[-–]\s+(.*)$/))) { open('dash'); html += `<li>${noteInlineHTML(m[1])}</li>`; }
+    else if ((m = line.match(/^\s*[*•]\s+(.*)$/))) { open('ul'); html += `<li>${noteInlineHTML(m[1])}</li>`; }
+    else if ((m = line.match(/^\s*\d+[.)]\s+(.*)$/))) { open('ol'); html += `<li>${noteInlineHTML(m[1])}</li>`; }
+    else { close(); html += `<div>${noteInlineHTML(line)}</div>`; }
+  });
+  close();
+  return html;
+}
+function inlineMarkup(node) {
+  let out = '';
+  node.childNodes.forEach(c => {
+    if (c.nodeType === 3) { out += c.nodeValue.replace(/ /g, ' ').replace(/\n/g, ' '); return; }
+    if (c.nodeType !== 1) return;
+    const tag = c.tagName;
+    if (tag === 'BR') { out += '\n'; return; }
+    if (tag === 'UL' || tag === 'OL') return;
+    let inner = inlineMarkup(c);
+    const st = c.style || {};
+    const bold = tag === 'B' || tag === 'STRONG' || /^(bold|[6-9]00)$/.test(st.fontWeight || '');
+    const ital = tag === 'I' || tag === 'EM' || st.fontStyle === 'italic';
+    const und = tag === 'U' || /underline/.test(st.textDecoration || st.textDecorationLine || '');
+    const strike = tag === 'S' || tag === 'STRIKE' || tag === 'DEL' || /line-through/.test(st.textDecoration || st.textDecorationLine || '');
+    const wrap = (mk) => {
+      const m = inner.match(/^(\s*)([\s\S]*?)(\s*)$/);
+      inner = m[2] ? m[1] + mk + m[2] + mk + m[3] : inner;
+    };
+    if (strike) wrap('~~');
+    if (und) wrap('++');
+    if (ital) wrap('*');
+    if (bold) wrap('**');
+    if (tag === 'A' && c.getAttribute('href') && !inner.includes(c.getAttribute('href'))) inner += ' ' + c.getAttribute('href');
+    out += inner;
+  });
+  return out;
+}
+function editorToMarkup(root) {
+  const lines = [];
+  const pushText = txt => txt.split('\n').forEach(l => lines.push(l.replace(/\s+$/, '')));
+  const walk = (parent) => {
+    let buf = null;
+    const flush = () => { if (buf !== null) { pushText(inlineMarkup(buf)); buf = null; } };
+    [...parent.childNodes].forEach(c => {
+      const isBlock = c.nodeType === 1 && BLOCK_TAGS.has(c.tagName);
+      if (!isBlock) {
+        if (c.nodeType === 1 && c.tagName === 'BR' && buf === null) { lines.push(''); return; }
+        if (buf === null) buf = document.createElement('div');
+        buf.appendChild(c.cloneNode(true));
+        if (c.nodeType === 1 && c.tagName === 'BR') flush();
+        return;
+      }
+      flush();
+      const tag = c.tagName;
+      if (/^H[1-6]$/.test(tag)) { const t = inlineMarkup(c).replace(/\n/g, ' ').trim(); lines.push(t ? '## ' + t : ''); }
+      else if (tag === 'UL' || tag === 'OL') listLines(c, 0);
+      else if (tag === 'LI') listLines({ tagName: 'UL', classList: { contains: () => false }, children: [c] }, 0);
+      else if (tag === 'TABLE' || tag === 'TR' || tag === 'SECTION' || tag === 'ARTICLE' || tag === 'HEADER' || tag === 'FOOTER' || tag === 'BLOCKQUOTE') walk(c);
+      else if ([...c.childNodes].some(x => x.nodeType === 1 && BLOCK_TAGS.has(x.tagName))) walk(c);
+      else { const t = inlineMarkup(c); pushText(t.replace(/\n$/, '')); }
+    });
+    flush();
+  };
+  const listLines = (list, depth) => {
+    const ordered = list.tagName === 'OL', dash = list.classList.contains('dash');
+    let n = 0;
+    [...list.children].forEach(li => {
+      if (li.tagName === 'UL' || li.tagName === 'OL') { listLines(li, depth + 1); return; }
+      if (li.tagName !== 'LI') return;
+      n++;
+      const pad = '  '.repeat(depth);
+      const text = inlineMarkup(li).replace(/\n+/g, ' ').trim();
+      let prefix;
+      if (li.classList.contains('todo')) prefix = '- [' + (['x', 'X', 't'].includes(li.dataset.st) ? li.dataset.st : ' ') + '] ';
+      else prefix = ordered ? n + '. ' : dash ? '- ' : '• ';
+      lines.push(pad + prefix + text);
+      [...li.children].forEach(ch => { if (ch.tagName === 'UL' || ch.tagName === 'OL') listLines(ch, depth + 1); });
+    });
+  };
+  walk(root);
+  while (lines.length && !lines[lines.length - 1].trim()) lines.pop();
+  return lines.join('\n');
+}
+function setNoteContent(text) {
+  NE.ta().value = text || '';
+  NE.el().innerHTML = text ? markupToEditorHTML(text) : '<div><br></div>';
+  noteEditorChanged(true);
+}
+function noteEditorChanged(skipSync) {
+  const ed = NE.el();
+  if (!skipSync) NE.ta().value = editorToMarkup(ed);
+  ed.classList.toggle('is-empty', !ed.textContent.trim() && !ed.querySelector('li, h4'));
+  updateFmtBar();
+}
+function editorBlock() {
+  const sel = window.getSelection(), ed = NE.el();
+  if (!sel.rangeCount || !ed.contains(sel.anchorNode)) return null;
+  let n = sel.anchorNode;
+  while (n && n !== ed) { if (n.nodeType === 1 && (n.tagName === 'LI' || /^H[1-6]$/.test(n.tagName) || n.tagName === 'DIV' || n.tagName === 'P')) return n; n = n.parentNode; }
+  return null;
+}
+function updateFmtBar() {
+  const bar = $('fmtBar');
+  if (!bar) return;
+  const inEd = document.activeElement === NE.el();
+  const blk = inEd ? editorBlock() : null;
+  bar.querySelectorAll('[data-fmt]').forEach(b => {
+    let on = false;
+    if (inEd) {
+      const k = b.dataset.fmt;
+      if (['b', 'i', 'u', 's'].includes(k)) { try { on = document.queryCommandState(b.dataset.cmd); } catch (e) { on = false; } }
+      else if (k === 'h') on = !!blk && /^H/.test(blk.tagName);
+      else if (blk && blk.tagName === 'LI') {
+        const ul = blk.parentNode;
+        on = k === 'todo' ? blk.classList.contains('todo')
+          : k === 'ol' ? ul.tagName === 'OL'
+          : k === 'dash' ? ul.tagName === 'UL' && ul.classList.contains('dash') && !blk.classList.contains('todo')
+          : k === 'ul' ? ul.tagName === 'UL' && !ul.classList.contains('dash') && !blk.classList.contains('todo') : false;
+      }
+    }
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-pressed', on);
+  });
+}
+function editorMakeList(kind) {
+  const ed = NE.el();
+  let blk = editorBlock();
+  const cur = blk && blk.tagName === 'LI' ? (blk.classList.contains('todo') ? 'todo' : blk.parentNode.tagName === 'OL' ? 'ol' : blk.parentNode.classList.contains('dash') ? 'dash' : 'ul') : '';
+  if (cur === kind) { document.execCommand(kind === 'ol' ? 'insertOrderedList' : 'insertUnorderedList'); return; }
+  const wantOl = kind === 'ol';
+  if (!blk || blk.tagName !== 'LI' || (blk.parentNode.tagName === 'OL') !== wantOl) {
+    const sel = window.getSelection();
+    let at = -1;
+    if (blk && sel.isCollapsed) { const r = document.createRange(); r.selectNodeContents(blk); r.setEnd(sel.anchorNode, sel.anchorOffset); at = r.toString().length; }
+    document.execCommand(wantOl ? 'insertOrderedList' : 'insertUnorderedList');
+    const nb = editorBlock();
+    if (at >= 0 && nb) {
+      const w = document.createTreeWalker(nb, NodeFilter.SHOW_TEXT);
+      let n, left = at, done = false;
+      while ((n = w.nextNode())) { if (left <= n.nodeValue.length) { const r = document.createRange(); r.setStart(n, left); r.collapse(true); sel.removeAllRanges(); sel.addRange(r); done = true; break; } left -= n.nodeValue.length; }
+      if (!done && at === 0) { /* ligne vide : rien à replacer */ }
+    }
   }
-  ta.focus();
+  blk = editorBlock();
+  if (!blk || blk.tagName !== 'LI') return;
+  const ul = blk.parentNode;
+  if (kind === 'todo') { blk.classList.add('todo'); if (!blk.dataset.st) blk.dataset.st = ' '; }
+  else { blk.classList.remove('todo'); delete blk.dataset.st; }
+  if (ul.tagName === 'UL') {
+    if (kind === 'dash') ul.classList.add('dash');
+    else if (kind === 'ul') ul.classList.remove('dash');
+  }
+  if (!ul.className) ul.removeAttribute('class');
+  if (!blk.className) blk.removeAttribute('class');
+}
+function editorToggleHeading() {
+  const blk = editorBlock();
+  if (blk && /^H/.test(blk.tagName)) document.execCommand('formatBlock', false, 'div');
+  else {
+    if (blk && blk.tagName === 'LI') document.execCommand(blk.parentNode.tagName === 'OL' ? 'insertOrderedList' : 'insertUnorderedList');
+    document.execCommand('formatBlock', false, 'h4');
+  }
+}
+function noteFormat(kind) {
+  const ed = NE.el();
+  if (document.activeElement !== ed) {
+    ed.focus();
+    const sel = window.getSelection();
+    if (!sel.rangeCount || !ed.contains(sel.anchorNode)) { const r = document.createRange(); r.selectNodeContents(ed); r.collapse(false); sel.removeAllRanges(); sel.addRange(r); }
+  }
+  try { document.execCommand('styleWithCSS', false, false); } catch (e) { /* ignoré */ }
+  const cmds = { b: 'bold', i: 'italic', u: 'underline', s: 'strikeThrough' };
+  if (cmds[kind]) document.execCommand(cmds[kind]);
+  else if (kind === 'h') editorToggleHeading();
+  else if (['ul', 'ol', 'dash', 'todo'].includes(kind)) editorMakeList(kind);
+  else if (kind === 'clear') document.execCommand('removeFormat');
+  else if (kind === 'link') {
+    const sel = window.getSelection();
+    const saved = sel.rangeCount ? sel.getRangeAt(0).cloneRange() : null;
+    const url = prompt('Adresse du lien (https://…) ou chemin réseau (\\\\serveur\\dossier\\fichier.docx)', '');
+    ed.focus();
+    if (saved) { sel.removeAllRanges(); sel.addRange(saved); }
+    if (!url || !url.trim()) return;
+    const label = saved && !saved.collapsed ? saved.toString().trim() : '';
+    document.execCommand('insertText', false, label && label !== url.trim() ? label + ' ' + url.trim() : url.trim());
+  }
+  noteEditorChanged();
+}
+/* Raccourcis de saisie : « - » tiret, « * » puce, « 1. » numérotée, « [] » case, « ## » titre, suivis d'une espace */
+function editorAutoFormat() {
+  const blk = editorBlock();
+  if (!blk || blk.tagName === 'LI' || /^H/.test(blk.tagName)) return false;
+  const sel = window.getSelection();
+  if (!sel.isCollapsed) return false;
+  const txt = blk.textContent.replace(/ /g, ' ');
+  const m = txt.match(/^(-|–|\*|•|1[.)]|\[ ?\]|\[x\]|#{1,3}) $/i);
+  if (!m) return false;
+  const pre = new Range(); pre.setStart(blk, 0); pre.setEnd(sel.anchorNode, sel.anchorOffset);
+  if (pre.toString().replace(/ /g, ' ') !== txt) return false;
+  blk.innerHTML = '<br>';
+  const r = document.createRange(); r.setStart(blk, 0); r.collapse(true); sel.removeAllRanges(); sel.addRange(r);
+  const k = m[1];
+  if (k.startsWith('#')) editorToggleHeading();
+  else editorMakeList(k === '-' || k === '–' ? 'dash' : (k === '*' || k === '•') ? 'ul' : /^1/.test(k) ? 'ol' : 'todo');
+  if (/x/i.test(k)) { const li = editorBlock(); if (li) li.dataset.st = 'x'; }
+  return true;
+}
+/* Chaque ligne tapée directement dans l'éditeur est rangée dans son propre bloc */
+function editorWrapLoose() {
+  const ed = NE.el();
+  const loose = [...ed.childNodes].filter(c => !(c.nodeType === 1 && BLOCK_TAGS.has(c.tagName)) && !(c.nodeType === 3 && !c.nodeValue.trim() && !c.nodeValue.length));
+  if (!loose.length) return;
+  const sel = window.getSelection();
+  const a = sel.rangeCount ? [sel.anchorNode, sel.anchorOffset] : null;
+  let run = null;
+  [...ed.childNodes].forEach(c => {
+    if (c.nodeType === 1 && BLOCK_TAGS.has(c.tagName)) { run = null; return; }
+    if (c.nodeType === 1 && c.tagName === 'BR' && run) { run.appendChild(c); run = null; return; }
+    if (!run) { run = document.createElement('div'); ed.insertBefore(run, c); }
+    run.appendChild(c);
+  });
+  if (a && a[0] && ed.contains(a[0])) { try { const r = document.createRange(); r.setStart(a[0], a[1]); r.collapse(true); sel.removeAllRanges(); sel.addRange(r); } catch (e) { /* ignoré */ } }
+}
+function initNoteEditor() {
+  const ed = NE.el();
+  try { document.execCommand('defaultParagraphSeparator', false, 'div'); } catch (e) { /* ignoré */ }
+  ed.addEventListener('input', e => {
+    editorWrapLoose();
+    if (e.inputType === 'insertText' && e.data === ' ') editorAutoFormat();
+    ed.querySelectorAll('li.todo').forEach(li => { if (!li.textContent.trim() && li.dataset.st !== ' ') li.dataset.st = ' '; });
+    ed.querySelectorAll('li:not(.todo)[data-st]').forEach(li => li.removeAttribute('data-st'));
+    noteEditorChanged();
+  });
+  ed.addEventListener('keydown', e => {
+    if (e.key === 'Tab') {
+      const blk = editorBlock();
+      if (blk && blk.tagName === 'LI') { e.preventDefault(); document.execCommand(e.shiftKey ? 'outdent' : 'indent'); noteEditorChanged(); }
+      return;
+    }
+    if (e.key === 'Enter' && !e.shiftKey) {
+      const blk = editorBlock();
+      if (blk && /^H/.test(blk.tagName)) {
+        const sel = window.getSelection(), end = document.createRange();
+        end.selectNodeContents(blk); end.setStart(sel.anchorNode, sel.anchorOffset);
+        if (!end.toString()) { e.preventDefault(); const d = document.createElement('div'); d.innerHTML = '<br>'; blk.after(d);
+          const r = document.createRange(); r.setStart(d, 0); r.collapse(true); sel.removeAllRanges(); sel.addRange(r); noteEditorChanged(); }
+      }
+      return;
+    }
+    if (e.key === 'Backspace') {
+      const blk = editorBlock(), sel = window.getSelection();
+      if (blk && blk.tagName === 'LI' && sel.isCollapsed) {
+        const pre = document.createRange(); pre.selectNodeContents(blk); pre.setEnd(sel.anchorNode, sel.anchorOffset);
+        if (!pre.toString() && blk.classList.contains('todo')) { e.preventDefault(); blk.classList.remove('todo'); blk.removeAttribute('data-st'); blk.removeAttribute('class'); noteEditorChanged(); }
+      }
+    }
+  });
+  /* Cocher ou décocher une case en cliquant dessus */
+  ed.addEventListener('mousedown', e => {
+    const li = e.target.closest && e.target.closest('li.todo');
+    if (!li || !ed.contains(li)) return;
+    const r = li.getBoundingClientRect();
+    if (e.clientX < r.left - 2) {
+      e.preventDefault();
+      li.dataset.st = li.dataset.st === ' ' || !li.dataset.st ? 'x' : (li.dataset.st === 't' ? 't' : ' ');
+      noteEditorChanged();
+    }
+  });
+  /* Coller : on garde le texte, sans la mise en page d'origine (Word, Outlook, web) */
+  ed.addEventListener('paste', e => {
+    const t = e.clipboardData && e.clipboardData.getData('text/plain');
+    if (t === undefined || t === null) return;
+    e.preventDefault();
+    const clean = t.replace(/\r\n?/g, '\n');
+    if (!clean.includes('\n')) { document.execCommand('insertText', false, clean); noteEditorChanged(); return; }
+    document.execCommand('insertHTML', false, markupToEditorHTML(clean));
+    noteEditorChanged();
+  });
+  ed.addEventListener('drop', e => { e.preventDefault(); });
+  document.addEventListener('selectionchange', () => { if (!$('noteForm').hidden) updateFmtBar(); });
+  ed.addEventListener('blur', () => updateFmtBar());
+  /* Les boutons de mise en forme ne doivent pas faire perdre la sélection */
+  $('fmtBar').addEventListener('mousedown', e => { if (e.target.closest('button')) e.preventDefault(); });
 }
 async function copyPath(path) {
   try { await navigator.clipboard.writeText(path); showToast('Chemin copié : colle-le dans l’Explorateur Windows.', null, 4000); }
@@ -5499,7 +5803,7 @@ $('dossierFilter').addEventListener('change', (e) => { UI.dossierFilter = e.targ
 $('pilotPeriod').addEventListener('change', (e) => { UI.pilotDays = Number(e.target.value); render(); });
 $('f-statut').addEventListener('change', () => { $('motifField').hidden = $('f-statut').value !== 'en_attente'; });
 $('n-template').addEventListener('change', applyNoteTemplate);
-$('n-contenu').addEventListener('input', renderNotePreview);
+initNoteEditor();
 $('quickInput').addEventListener('input', () => $('quickBar').classList.toggle('has-text', !!$('quickInput').value.trim()));
 $('dayCapacity').addEventListener('change', (e) => {
   const v = Math.round(Number(e.target.value) * 2) / 2;
